@@ -26,6 +26,7 @@ const moduleIcons: Record<string, React.ReactNode> = {
   'mod-4': <span className="text-2xl">04</span>,
   'mod-5': <span className="text-2xl">05</span>,
   'mod-6': <span className="text-2xl">06</span>,
+  'mod-7': <span className="text-2xl">07</span>,
 };
 
 export function Home() {
@@ -112,7 +113,7 @@ export function Home() {
           <div>
             <h2 className="text-2xl font-bold text-white">Curriculum</h2>
             <p className="mt-1 text-sm text-slate-500">
-              6 modules &middot; {curriculum.reduce((s, m) => s + m.lessons.length, 0)} lessons
+              {curriculum.length} modules &middot; {curriculum.reduce((s, m) => s + m.lessons.length, 0)} lessons
               &middot; {curriculum.reduce((s, m) => s + m.puzzles.length, 0)} puzzles
             </p>
           </div>

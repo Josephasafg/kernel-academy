@@ -1739,101 +1739,111 @@ print(f"Max error: {np.max(np.abs(output - expected)):.2e}")
       },
       {
         id: 'mod-6-lesson-2',
-        title: 'Attention Scores',
-        content: `## Attention Scores
+        title: 'Online Softmax & Flash Attention',
+        content: `## Online Softmax & Flash Attention
 
-The attention mechanism is the heart of transformers. The first step is computing attention scores:
+The naive approach to attention computes **all** scores first, applies softmax, then multiplies by V. This requires storing the full N\u00d7N score matrix \u2014 O(n\u00b2) memory.
+
+**Online softmax** (the algorithm behind Flash Attention) processes keys one at a time, maintaining a running softmax. This uses O(1) extra memory per query.
+
+### The Problem with Standard Softmax
+
+Standard softmax needs two passes over the data:
+1. Find the max (for numerical stability)
+2. Compute exp(x - max) / sum(exp(x - max))
+
+You can't start computing output until you've seen every score. That means materializing the full score matrix.
+
+### The Online Softmax Trick
+
+Online softmax does it in **one pass** by correcting previous results when a new maximum is found:
 
 \`\`\`
-scores = softmax(Q @ K^T / sqrt(d_k))
+For each new key k with value v:
+    score = dot(q, k) / sqrt(d)
+    m_new = max(m_old, score)
+    alpha = exp(m_old - m_new)    # correction factor (\u2264 1)
+    p     = exp(score - m_new)    # new probability
+    l     = l * alpha + p         # rescale running sum
+    acc   = acc * alpha + p * v   # rescale running accumulator
 \`\`\`
 
-### Breaking It Down
+When the max doesn't change: \`alpha = 1\`, nothing gets rescaled.
+When the max increases: \`alpha < 1\`, all previous contributions shrink correctly.
 
-1. **Q @ K^T** — matrix multiply queries with transposed keys
-2. **/ sqrt(d_k)** — scale by square root of key dimension
-3. **softmax** — normalize scores to probabilities
+### Why This Matters
 
-### In Triton
+- **Flash Attention** uses exactly this algorithm (on blocks of keys, not individual keys)
+- O(1) extra memory per query instead of O(n)
+- Enables attention on sequences with millions of tokens
+- This is how **vLLM**, Flash Attention, and all modern inference engines work
 
-For simplicity, let's compute attention scores for a **single head** where each program handles one query row:
-
-\`\`\`python
-# For query row i:
-# scores[i,:] = softmax(Q[i,:] @ K^T / sqrt(d_k))
-\`\`\`
-
-This combines what we learned:
-- **Dot products** from Module 5
-- **Softmax** from Module 4
-- **Fusion** from Module 3
-
-### Simplification
-
-In this lesson, we compute the attention weights for a single query against all keys. Real Flash Attention is more complex (tiling over sequence length), but the core pattern is the same.
-
-Run the example to see attention scores computed!`,
+The example implements full attention (Q\u00d7K\u00d7V \u2192 output) with online softmax. Compare: our Module 4 softmax only computed weights, this computes the final output in one fused pass.`,
         code: `import triton
 import triton.language as tl
 import numpy as np
 
 @triton.jit
-def attention_scores_kernel(
-    q_ptr, k_ptr, out_ptr,
-    seq_len, d_k, scale,
-    BLOCK_SEQ: tl.constexpr, BLOCK_D: tl.constexpr,
+def online_attention_kernel(
+    q_ptr, k_ptr, v_ptr, out_ptr,
+    seq_len, d_k, sm_scale,
+    BLOCK_D: tl.constexpr,
 ):
-    """Compute attention scores for one query row."""
-    q_idx = tl.program_id(0)  # which query
-
-    # Load query vector [BLOCK_D]
+    """Full attention with online softmax - the core of Flash Attention."""
+    q_idx = tl.program_id(0)
     d_offs = tl.arange(0, BLOCK_D)
     d_mask = d_offs < d_k
+
     q = tl.load(q_ptr + q_idx * d_k + d_offs, mask=d_mask, other=0.0)
 
-    # Compute dot product with each key
-    s_offs = tl.arange(0, BLOCK_SEQ)
-    s_mask = s_offs < seq_len
-
-    scores = tl.zeros((BLOCK_SEQ,), dtype=tl.float32)
+    # Online softmax state
+    m_i = -1e10                                     # running max score
+    l_i = 0.0                                       # running sum of exp
+    acc = tl.zeros((BLOCK_D,), dtype=tl.float32)    # output accumulator
 
     for k_idx in range(seq_len):
         k = tl.load(k_ptr + k_idx * d_k + d_offs, mask=d_mask, other=0.0)
-        dot = tl.sum(q * k, axis=0)
-        # Manual scatter: set scores[k_idx]
-        idx_mask = s_offs == k_idx
-        scores = tl.where(idx_mask, dot * scale, scores)
+        v = tl.load(v_ptr + k_idx * d_k + d_offs, mask=d_mask, other=0.0)
 
-    # Softmax over scores
-    s_max = tl.max(scores, axis=0)
-    scores_exp = tl.exp(tl.where(s_mask, scores - s_max, float('-inf')))
-    scores_sum = tl.sum(scores_exp, axis=0)
-    attn = scores_exp / scores_sum
+        # Attention score
+        score = tl.sum(q * k, axis=0) * sm_scale
 
-    tl.store(out_ptr + q_idx * seq_len + s_offs, attn, mask=s_mask)
+        # Online softmax update
+        m_new = tl.maximum(m_i, score)
+        alpha = tl.exp(m_i - m_new)    # correction for previous values
+        p = tl.exp(score - m_new)       # probability for this key
+
+        l_i = l_i * alpha + p           # rescaled running sum
+        acc = acc * alpha + p * v       # rescaled weighted values
+        m_i = m_new
+
+    # Final normalization
+    out = acc / l_i
+    tl.store(out_ptr + q_idx * d_k + d_offs, out, mask=d_mask)
 
 # ---
 seq_len, d_k = 6, 8
+np.random.seed(42)
 Q = np.random.randn(seq_len, d_k).astype(np.float32)
 K = np.random.randn(seq_len, d_k).astype(np.float32)
-attn_weights = np.zeros((seq_len, seq_len), dtype=np.float32)
+V = np.random.randn(seq_len, d_k).astype(np.float32)
+output = np.zeros_like(Q)
 scale = 1.0 / np.sqrt(d_k)
 
-attention_scores_kernel[(seq_len,)](
-    Q, K, attn_weights, seq_len, d_k, scale,
-    BLOCK_SEQ=8, BLOCK_D=16,
-)
+online_attention_kernel[(seq_len,)](Q, K, V, output, seq_len, d_k, scale, BLOCK_D=16)
 
-# Verify
-expected = Q @ K.T * scale
-expected = np.exp(expected - expected.max(axis=1, keepdims=True))
-expected = expected / expected.sum(axis=1, keepdims=True)
+# Verify against standard two-pass attention
+scores = Q @ K.T * scale
+scores_max = scores.max(axis=1, keepdims=True)
+attn = np.exp(scores - scores_max)
+attn = attn / attn.sum(axis=1, keepdims=True)
+expected = attn @ V
 
-print("Attention weights:")
-np.set_printoptions(precision=3, suppress=True)
-print(attn_weights)
-print(f"\\nRow sums (should be 1.0): {attn_weights.sum(axis=1)}")
-print(f"Max error: {np.max(np.abs(attn_weights - expected)):.2e}")
+print("Online softmax attention (Flash Attention core)")
+print(f"Max error vs standard attention: {np.max(np.abs(output - expected)):.2e}")
+print(f"Correct: {np.allclose(output, expected, atol=1e-5)}")
+print(f"\\nOutput row 0:   {output[0].round(4)}")
+print(f"Expected row 0: {expected[0].round(4)}")
 `,
       },
       {
@@ -2160,6 +2170,381 @@ print("PASSED")`,
           correctIndex: 1,
           explanation:
             'Both the addition and layernorm operate on the same data independently per row. Fusing them eliminates the intermediate write (x+residual) and re-read, saving memory bandwidth.',
+        },
+      ],
+    },
+  },
+
+  // ===================================================================
+  // MODULE 7: Quantization
+  // ===================================================================
+  {
+    id: 'mod-7',
+    title: 'Quantization',
+    description:
+      'Shrink model weights from 16-bit to 4-bit. Learn bit packing, group-wise dequantization, and write a real inference kernel.',
+    icon: 'archive',
+    difficulty: 'advanced',
+    lessons: [
+      {
+        id: 'mod-7-lesson-1',
+        title: 'Why Quantization Matters',
+        content: `## Why Quantization Matters
+
+Large language models are memory-bound. A 70B parameter model in FP16 needs **140 GB** just to store the weights \u2014 that doesn't fit on a single GPU.
+
+### The Math
+
+| Precision | Bytes/param | 7B model | 70B model |
+|-----------|-------------|----------|-----------|
+| FP32      | 4           | 28 GB    | 280 GB    |
+| FP16      | 2           | 14 GB    | 140 GB    |
+| INT8      | 1           | 7 GB     | 70 GB     |
+| **INT4**  | **0.5**     | **3.5 GB** | **35 GB** |
+
+4-bit quantization gives **4x compression** over FP16. A 70B model fits on a single 48GB GPU.
+
+### How It Works
+
+**Quantize** (offline, once): convert FP16 weights to 4-bit integers.
+
+\`\`\`
+quantized = round((float_value / scale) + zero_point)
+\`\`\`
+
+**Dequantize** (at inference, in the kernel): convert back to float for computation.
+
+\`\`\`
+float_value = (quantized - zero_point) * scale
+\`\`\`
+
+### Group-wise Quantization
+
+Using one scale for an entire weight matrix is too coarse. Instead, weights are split into **groups** (e.g., 128 values), each with its own scale and zero point. This preserves accuracy while still compressing 4x.
+
+### Bit Packing
+
+A 4-bit value only needs 4 bits, but the smallest addressable unit is 8 bits. So we **pack** 8 values into a single 32-bit integer:
+
+\`\`\`
+int32: [val7][val6][val5][val4][val3][val2][val1][val0]
+        28-31 24-27 20-23 16-19 12-15  8-11  4-7   0-3
+\`\`\`
+
+To extract value \`i\`: \`(packed >> (i * 4)) & 0xF\`
+
+Run the example to see packing and unpacking in action!`,
+        code: `import numpy as np
+
+# === Bit Packing Demo ===
+# Pack 8 values (each 0-15) into one int32
+values = np.array([3, 7, 1, 15, 0, 9, 5, 12], dtype=np.int32)
+
+packed = 0
+for i, v in enumerate(values):
+    packed |= int(v) << (i * 4)
+
+print(f"Original 8 values: {values}")
+print(f"Packed into int32: 0x{packed:08X} ({packed})")
+print()
+
+# Unpack them back
+print("Unpacking with (packed >> (i*4)) & 0xF:")
+for i in range(8):
+    extracted = (packed >> (i * 4)) & 0xF
+    print(f"  Slot {i}: shift >> {i*4:2d}, mask 0xF -> {extracted}  {'OK' if extracted == values[i] else 'WRONG'}")
+
+# === Group-wise Dequantization Demo ===
+print("\\n=== Group-wise Dequantization ===")
+group_size = 4
+scales = np.array([0.1, 0.2], dtype=np.float32)   # 2 groups
+zeros = np.array([8.0, 8.0], dtype=np.float32)     # zero points
+
+print(f"Quantized values: {values}")
+print(f"Group size: {group_size}, Scales: {scales}, Zeros: {zeros}")
+print()
+
+for i, qval in enumerate(values):
+    group = i // group_size
+    dequant = (float(qval) - zeros[group]) * scales[group]
+    print(f"  val[{i}]={qval:2d}  group={group}  -> ({qval} - {zeros[group]}) * {scales[group]} = {dequant:+.1f}")
+`,
+      },
+      {
+        id: 'mod-7-lesson-2',
+        title: 'Dequantization Kernel',
+        content: `## Dequantization Kernel
+
+Now let's write a Triton kernel that dequantizes packed 4-bit weights. This is exactly what runs inside vLLM, llama.cpp, and other inference engines during every forward pass.
+
+### The Kernel's Job
+
+Input:
+- \`packed_weights\`: array of int32, each holding 8 x 4-bit values
+- \`scales\`: per-group scale factors
+- \`zeros\`: per-group zero points
+- \`group_size\`: how many values share one scale/zero
+
+Output:
+- \`output\`: array of float32, 8x longer than packed_weights
+
+### The Algorithm
+
+Each program handles a block of packed int32 values. For each packed value, it extracts all 8 nibbles and dequantizes them:
+
+\`\`\`python
+for bit in range(8):
+    quantized = (packed >> (bit * 4)) & 0xF
+    group = output_column // group_size
+    result = (quantized - zeros[group]) * scales[group]
+\`\`\`
+
+### Key Patterns
+
+- **Bit manipulation** in Triton: \`>>\` (shift) and \`&\` (mask) work on integer tensors
+- **Expansion**: 1 packed int32 becomes 8 float32 values
+- **Group indexing**: computing which group each output element belongs to
+
+This pattern appears in AWQ, GPTQ, and other quantization schemes used in production LLM inference (e.g., vLLM).
+
+Run the example to see it work!`,
+        code: `import triton
+import triton.language as tl
+import numpy as np
+
+@triton.jit
+def dequantize_kernel(
+    packed_ptr, scales_ptr, zeros_ptr, output_ptr,
+    num_packed, group_size,
+    BLOCK_SIZE: tl.constexpr,
+):
+    """Dequantize 4-bit packed weights to float32."""
+    pid = tl.program_id(0)
+    packed_offs = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
+    mask = packed_offs < num_packed
+
+    # Load packed int32 values (each contains 8 x 4-bit weights)
+    packed = tl.load(packed_ptr + packed_offs, mask=mask, other=0)
+
+    # Unpack each of the 8 nibbles
+    for bit in range(8):
+        # Extract 4-bit value: shift right and mask
+        quantized = (packed >> (bit * 4)) & 0xF
+
+        # Output position for this nibble
+        out_col = packed_offs * 8 + bit
+
+        # Group-wise dequantization
+        group_idx = out_col // group_size
+        scale = tl.load(scales_ptr + group_idx, mask=mask, other=1.0)
+        zero = tl.load(zeros_ptr + group_idx, mask=mask, other=0.0)
+
+        # Dequantize: float_val = (int4_val - zero) * scale
+        dequantized = (quantized.astype(np.float32) - zero) * scale
+        tl.store(output_ptr + out_col, dequantized, mask=mask)
+
+# --- Driver code ---
+np.random.seed(42)
+
+# Create original float weights, then quantize them
+num_values = 32
+group_size = 8
+num_groups = num_values // group_size
+
+# Random weights in [-1, 1]
+original = np.random.randn(num_values).astype(np.float32) * 0.5
+
+# Quantize per group
+scales = np.zeros(num_groups, dtype=np.float32)
+zeros = np.full(num_groups, 8.0, dtype=np.float32)  # mid-point zero
+quantized = np.zeros(num_values, dtype=np.int32)
+
+for g in range(num_groups):
+    sl = slice(g * group_size, (g + 1) * group_size)
+    group_vals = original[sl]
+    vmin, vmax = group_vals.min(), group_vals.max()
+    scales[g] = (vmax - vmin) / 15.0  # 4-bit range is 0-15
+    quantized[sl] = np.clip(np.round((group_vals - vmin) / scales[g]), 0, 15).astype(np.int32)
+    zeros[g] = -vmin / scales[g]  # zero point
+
+# Pack 8 values into each int32
+num_packed = num_values // 8
+packed = np.zeros(num_packed, dtype=np.int32)
+for i in range(num_packed):
+    for bit in range(8):
+        packed[i] |= int(quantized[i * 8 + bit]) << (bit * 4)
+
+print(f"Original weights ({num_values} values, {num_groups} groups, group_size={group_size})")
+print(f"Packed into {num_packed} int32 values\\n")
+
+# Dequantize with Triton kernel
+output = np.zeros(num_values, dtype=np.float32)
+grid = (triton.cdiv(num_packed, 4),)
+dequantize_kernel[grid](packed, scales, zeros, output, num_packed, group_size, BLOCK_SIZE=4)
+
+# Expected: manual dequant
+expected = np.zeros(num_values, dtype=np.float32)
+for i in range(num_values):
+    expected[i] = (quantized[i] - zeros[i // group_size]) * scales[i // group_size]
+
+print(f"Original:     {original[:8].round(3)}")
+print(f"Dequantized:  {output[:8].round(3)}")
+print(f"Expected:     {expected[:8].round(3)}")
+print(f"\\nMax quant error vs original: {np.max(np.abs(output - original)):.4f}")
+print(f"Kernel correct: {np.allclose(output, expected, atol=1e-5)}")
+`,
+      },
+    ],
+    puzzles: [
+      {
+        id: 'mod-7-puzzle-1',
+        title: 'Puzzle: 4-bit Dequantize',
+        description: `## 4-bit Dequantize
+
+Write a kernel that dequantizes packed 4-bit weights.
+
+You receive:
+- \`packed_ptr\`: int32 array where each element holds 8 x 4-bit values
+- \`scales_ptr\`: float32 per-group scales
+- \`zeros_ptr\`: float32 per-group zero points
+- \`group_size\`: number of values per group
+
+For each packed int32, you need to:
+1. Extract each of the 8 nibbles: \`(packed >> (bit * 4)) & 0xF\`
+2. Compute the output column: \`packed_offset * 8 + bit\`
+3. Find the group: \`output_col // group_size\`
+4. Dequantize: \`(quantized_float - zero) * scale\`
+5. Store the result`,
+        difficulty: 'hard',
+        starterCode: `import triton
+import triton.language as tl
+import numpy as np
+
+@triton.jit
+def dequant_kernel(packed_ptr, scales_ptr, zeros_ptr, output_ptr, num_packed, group_size, BLOCK_SIZE: tl.constexpr):
+    pid = tl.program_id(0)
+    offs = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
+    mask = offs < num_packed
+
+    packed = tl.load(packed_ptr + offs, mask=mask, other=0)
+
+    # TODO: loop over 8 bits, extract, dequantize, store
+    for bit in range(8):
+        # 1. Extract 4-bit value
+        # 2. Compute output position
+        # 3. Find group index
+        # 4. Load scale and zero
+        # 5. Dequantize and store
+        pass
+
+# --- Driver code (do not modify) ---
+np.random.seed(0)
+num_values = 16
+group_size = 8
+quantized = np.random.randint(0, 16, size=num_values, dtype=np.int32)
+scales = np.array([0.1, 0.2], dtype=np.float32)
+zeros = np.array([8.0, 7.0], dtype=np.float32)
+
+num_packed = num_values // 8
+packed = np.zeros(num_packed, dtype=np.int32)
+for i in range(num_packed):
+    for b in range(8):
+        packed[i] |= int(quantized[i * 8 + b]) << (b * 4)
+
+output = np.zeros(num_values, dtype=np.float32)
+dequant_kernel[(triton.cdiv(num_packed, 4),)](packed, scales, zeros, output, num_packed, group_size, BLOCK_SIZE=4)
+`,
+        solution: `import triton
+import triton.language as tl
+import numpy as np
+
+@triton.jit
+def dequant_kernel(packed_ptr, scales_ptr, zeros_ptr, output_ptr, num_packed, group_size, BLOCK_SIZE: tl.constexpr):
+    pid = tl.program_id(0)
+    offs = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
+    mask = offs < num_packed
+
+    packed = tl.load(packed_ptr + offs, mask=mask, other=0)
+
+    for bit in range(8):
+        w = (packed >> (bit * 4)) & 0xF
+        out_col = offs * 8 + bit
+        group_idx = out_col // group_size
+        scale = tl.load(scales_ptr + group_idx, mask=mask, other=1.0)
+        zero = tl.load(zeros_ptr + group_idx, mask=mask, other=0.0)
+        result = (w.astype(np.float32) - zero) * scale
+        tl.store(output_ptr + out_col, result, mask=mask)`,
+        testCode: `# Verify
+expected = np.zeros(num_values, dtype=np.float32)
+for i in range(num_values):
+    expected[i] = (float(quantized[i]) - zeros[i // group_size]) * scales[i // group_size]
+max_err = np.max(np.abs(output - expected))
+assert max_err < 1e-5, f"Wrong! Max error: {max_err}"
+print(f"Quantized: {quantized}")
+print(f"Output:    {output.round(3)}")
+print(f"Expected:  {expected.round(3)}")
+print(f"Max error: {max_err:.2e}")
+print("PASSED")`,
+        hints: [
+          'Extract the 4-bit value: w = (packed >> (bit * 4)) & 0xF',
+          'Output position: out_col = offs * 8 + bit. Group: group_idx = out_col // group_size',
+          'Dequantize: result = (w.astype(np.float32) - zero) * scale, then tl.store to output_ptr + out_col',
+        ],
+      },
+    ],
+    quiz: {
+      id: 'mod-7-quiz',
+      questions: [
+        {
+          id: 'mod-7-q1',
+          question:
+            'How many 4-bit values can be packed into a single int32?',
+          options: ['4', '8', '16', '32'],
+          correctIndex: 1,
+          explanation:
+            'An int32 has 32 bits. Each 4-bit value takes 4 bits, so 32/4 = 8 values fit in one int32.',
+        },
+        {
+          id: 'mod-7-q2',
+          question:
+            'To extract the 3rd nibble (index 2) from a packed int32, what expression do you use?',
+          options: [
+            '(packed >> 2) & 0xF',
+            '(packed >> 8) & 0xF',
+            '(packed >> 6) & 0xF',
+            '(packed & 0xF) >> 8',
+          ],
+          correctIndex: 1,
+          explanation:
+            'Nibble at index i starts at bit position i*4. For index 2: shift right by 2*4=8 bits, then mask with 0xF (binary 1111) to isolate the 4-bit value.',
+        },
+        {
+          id: 'mod-7-q3',
+          question:
+            'Why is group-wise quantization used instead of per-tensor quantization?',
+          options: [
+            'It is faster to compute',
+            'It uses less memory',
+            'It preserves accuracy by allowing different scale/zero per group of weights',
+            'It is required by GPU hardware',
+          ],
+          correctIndex: 2,
+          explanation:
+            'Different regions of a weight matrix can have very different value ranges. Per-group scale/zero tracks these local ranges, reducing quantization error compared to a single global scale.',
+        },
+        {
+          id: 'mod-7-q4',
+          question:
+            'In a dequantization kernel, what is the main computational pattern?',
+          options: [
+            'Matrix multiplication followed by reduction',
+            'Bit extraction with shifts/masks, then linear transform (subtract zero, multiply scale)',
+            'Sorting values and interpolating',
+            'Repeated softmax applications',
+          ],
+          correctIndex: 1,
+          explanation:
+            'Dequantization extracts packed integer values using bit shifts and masks, then applies the linear transform: float = (int_value - zero_point) * scale.',
         },
       ],
     },

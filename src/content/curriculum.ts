@@ -210,12 +210,12 @@ def add_kernel(x_ptr, y_ptr, output_ptr, n_elements, BLOCK_SIZE: tl.constexpr):
     tl.store(output_ptr + offsets, output, mask=mask)
 
 # --- Driver code ---
-n = 1000
+n = 20
 x = np.random.randn(n).astype(np.float32)
 y = np.random.randn(n).astype(np.float32)
 output = np.zeros(n, dtype=np.float32)
 
-BLOCK_SIZE = 256
+BLOCK_SIZE = 8
 grid = (triton.cdiv(n, BLOCK_SIZE),)
 
 print(f"Adding two vectors of size {n}")
@@ -226,8 +226,8 @@ add_kernel[grid](x, y, output, n, BLOCK_SIZE=BLOCK_SIZE)
 # Verify
 expected = x + y
 max_err = np.max(np.abs(output - expected))
-print(f"First 5 results:  {output[:5]}")
-print(f"Expected:         {expected[:5]}")
+print(f"Results:  {output}")
+print(f"Expected: {expected}")
 print(f"Max error: {max_err:.2e}")
 print(f"Correct: {np.allclose(output, expected)}")
 `,
@@ -271,13 +271,13 @@ def mul_kernel(x_ptr, y_ptr, output_ptr, n_elements, BLOCK_SIZE: tl.constexpr):
     pass
 
 # --- Driver code (do not modify) ---
-n = 512
+n = 20
 x = np.random.randn(n).astype(np.float32)
 y = np.random.randn(n).astype(np.float32)
 output = np.zeros(n, dtype=np.float32)
 
-grid = (triton.cdiv(n, 128),)
-mul_kernel[grid](x, y, output, n, BLOCK_SIZE=128)
+grid = (triton.cdiv(n, 8),)
+mul_kernel[grid](x, y, output, n, BLOCK_SIZE=8)
 `,
         solution: `import triton
 import triton.language as tl
@@ -816,22 +816,21 @@ def fused_linear_relu_kernel(
     tl.store(output_ptr + offsets, result, mask=mask)
 
 # ---
-n = 1000
+n = 24
 x = np.random.randn(n).astype(np.float32)
 weight = np.random.randn(n).astype(np.float32) * 0.1
 bias = np.random.randn(n).astype(np.float32) * 0.01
 output = np.zeros(n, dtype=np.float32)
 
-grid = (triton.cdiv(n, 256),)
-fused_linear_relu_kernel[grid](x, weight, bias, output, n, BLOCK_SIZE=256)
+grid = (triton.cdiv(n, 8),)
+fused_linear_relu_kernel[grid](x, weight, bias, output, n, BLOCK_SIZE=8)
 
 # Verify against numpy
 expected = np.maximum(x * weight + bias, 0.0)
-print(f"Fused ReLU(x*w+b) kernel")
+print(f"Fused ReLU(x*w+b) kernel — 4 arrays, 3 programs")
 print(f"Max error: {np.max(np.abs(output - expected)):.2e}")
 print(f"Correct: {np.allclose(output, expected)}")
-print(f"\\n% of activations > 0: {np.mean(output > 0)*100:.1f}%")
-print(f"Mean output: {np.mean(output):.4f}")
+print(f"% of activations > 0: {np.mean(output > 0)*100:.1f}%")
 `,
       },
     ],
@@ -881,13 +880,13 @@ def fused_gelu_scale_kernel(x_ptr, output_ptr, scale, n, BLOCK_SIZE: tl.constexp
     tl.store(output_ptr + offsets, result, mask=mask)
 
 # --- Driver code ---
-n = 256
+n = 24
 x = np.random.randn(n).astype(np.float32)
 output = np.zeros(n, dtype=np.float32)
 scale = 2.0
 
-grid = (triton.cdiv(n, 128),)
-fused_gelu_scale_kernel[grid](x, output, scale, n, BLOCK_SIZE=128)
+grid = (triton.cdiv(n, 8),)
+fused_gelu_scale_kernel[grid](x, output, scale, n, BLOCK_SIZE=8)
 `,
         solution: `import triton
 import triton.language as tl
@@ -1549,12 +1548,12 @@ def dot_kernel(a_ptr, b_ptr, output_ptr, n, BLOCK_SIZE: tl.constexpr):
     pass
 
 # --- Driver code ---
-n = 64
+n = 16
 a = np.random.randn(n).astype(np.float32)
 b = np.random.randn(n).astype(np.float32)
 result = np.zeros(1, dtype=np.float32)
 
-dot_kernel[(1,)](a, b, result, n, BLOCK_SIZE=128)
+dot_kernel[(1,)](a, b, result, n, BLOCK_SIZE=16)
 
 print(f"Dot product: {result[0]:.6f}")
 `,
@@ -1903,7 +1902,7 @@ def add_kernel(x_ptr, y_ptr, out_ptr, n, BLOCK_SIZE: tl.constexpr):
     tl.store(out_ptr + offs, x + y, mask=mask)
 
 # Simulate autotuning by trying different block sizes
-n = 10000
+n = 32
 x = np.random.randn(n).astype(np.float32)
 y = np.random.randn(n).astype(np.float32)
 

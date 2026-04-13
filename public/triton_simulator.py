@@ -151,12 +151,14 @@ class _TritonLanguage:
             safe = (offsets >= 0) & (offsets < len(data))
             if mask is not None:
                 safe = safe & mask
+
             result = np.full(offsets.shape, other, dtype=data.dtype)
             valid_offsets = offsets[safe].astype(np.intp)
             result[safe] = data[valid_offsets]
             return result
         if isinstance(pointer, Pointer):
             idx = pointer.offset
+
             if 0 <= idx < len(pointer._flat):
                 return pointer._flat[idx]
             return type(other)(other) if other is not None else 0.0
@@ -170,6 +172,7 @@ class _TritonLanguage:
             safe = (offsets >= 0) & (offsets < len(data))
             if mask is not None:
                 safe = safe & mask
+
             valid_offsets = offsets[safe].astype(np.intp)
             if isinstance(value, np.ndarray):
                 data[valid_offsets] = value[safe]
@@ -178,6 +181,7 @@ class _TritonLanguage:
             return
         if isinstance(pointer, Pointer):
             idx = pointer.offset
+
             if mask is None or mask:
                 if 0 <= idx < len(pointer._flat):
                     pointer._flat[idx] = value

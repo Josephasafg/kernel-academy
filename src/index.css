@@ -1,0 +1,159 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-void text-slate-200 antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0c1222;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+  }
+
+  ::selection {
+    background: rgba(6, 182, 212, 0.3);
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply rounded-xl border border-white/[0.06] bg-surface/80 backdrop-blur-xl;
+  }
+
+  .glass-card-hover {
+    @apply glass-card transition-all duration-300;
+  }
+  .glass-card-hover:hover {
+    @apply border-accent-cyan/20 bg-surface-light/80;
+    box-shadow: 0 0 30px rgba(6, 182, 212, 0.08),
+      0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .glow-border {
+    @apply border border-accent-cyan/20;
+    box-shadow: 0 0 15px rgba(6, 182, 212, 0.1),
+      inset 0 0 15px rgba(6, 182, 212, 0.03);
+  }
+
+  .btn-primary {
+    @apply relative inline-flex items-center gap-2 rounded-lg bg-accent-cyan/10 px-4 py-2.5
+           font-medium text-accent-cyan transition-all duration-200
+           hover:bg-accent-cyan/20;
+  }
+  .btn-primary::after {
+    content: '';
+    @apply absolute inset-0 rounded-lg opacity-0 transition-opacity duration-200;
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+  }
+  .btn-primary:hover::after {
+    opacity: 1;
+  }
+
+  .btn-success {
+    @apply inline-flex items-center gap-2 rounded-lg bg-emerald-500/10 px-4 py-2.5
+           font-medium text-emerald-400 transition-all duration-200
+           hover:bg-emerald-500/20;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm
+           text-slate-400 transition-all duration-200
+           hover:bg-white/5 hover:text-slate-200;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+  .badge-beginner {
+    @apply badge bg-emerald-500/10 text-emerald-400;
+  }
+  .badge-intermediate {
+    @apply badge bg-amber-500/10 text-amber-400;
+  }
+  .badge-advanced {
+    @apply badge bg-orange-500/10 text-orange-400;
+  }
+  .badge-expert {
+    @apply badge bg-rose-500/10 text-rose-400;
+  }
+
+  .lesson-content h1 {
+    @apply mb-4 text-2xl font-bold text-white;
+  }
+  .lesson-content h2 {
+    @apply mb-3 mt-6 text-xl font-semibold text-white;
+  }
+  .lesson-content h3 {
+    @apply mb-2 mt-4 text-lg font-medium text-slate-100;
+  }
+  .lesson-content p {
+    @apply mb-4 leading-relaxed text-slate-300;
+  }
+  .lesson-content ul {
+    @apply mb-4 list-disc space-y-1 pl-6 text-slate-300;
+  }
+  .lesson-content ol {
+    @apply mb-4 list-decimal space-y-1 pl-6 text-slate-300;
+  }
+  .lesson-content code {
+    @apply rounded bg-surface-lighter px-1.5 py-0.5 font-mono text-sm text-accent-cyan;
+  }
+  .lesson-content pre {
+    @apply mb-4 overflow-x-auto rounded-lg border border-white/5 bg-[#0a0e1a] p-4;
+  }
+  .lesson-content pre code {
+    @apply bg-transparent p-0 text-slate-300;
+  }
+  .lesson-content blockquote {
+    @apply mb-4 border-l-2 border-accent-cyan/30 pl-4 italic text-slate-400;
+  }
+  .lesson-content strong {
+    @apply font-semibold text-white;
+  }
+  .lesson-content a {
+    @apply text-accent-cyan underline decoration-accent-cyan/30 underline-offset-2
+           transition-colors hover:text-neon-cyan hover:decoration-neon-cyan/50;
+  }
+  .lesson-content hr {
+    @apply my-6 border-white/5;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent;
+  }
+  .text-gradient-warm {
+    @apply bg-gradient-to-r from-amber-400 to-rose-500 bg-clip-text text-transparent;
+  }
+
+  .bg-grid-pattern {
+    background-image: linear-gradient(
+        rgba(6, 182, 212, 0.03) 1px,
+        transparent 1px
+      ),
+      linear-gradient(90deg, rgba(6, 182, 212, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .bg-dot-pattern {
+    background-image: radial-gradient(
+      rgba(6, 182, 212, 0.08) 1px,
+      transparent 1px
+    );
+    background-size: 24px 24px;
+  }
+}

@@ -5,11 +5,15 @@ interface ProgressState {
   completedLessons: string[];
   solvedPuzzles: string[];
   quizScores: Record<string, number>;
+  codeEdits: Record<string, string>;
   sidebarOpen: boolean;
 
   completeLesson: (id: string) => void;
   solvePuzzle: (id: string) => void;
   setQuizScore: (moduleId: string, score: number) => void;
+  setCodeEdit: (key: string, code: string) => void;
+  getCodeEdit: (key: string) => string | undefined;
+  clearCodeEdit: (key: string) => void;
   toggleSidebar: () => void;
   getModuleProgress: (moduleId: string, totalItems: number) => number;
   isLessonComplete: (id: string) => boolean;
@@ -22,6 +26,7 @@ export const useProgress = create<ProgressState>()(
       completedLessons: [],
       solvedPuzzles: [],
       quizScores: {},
+      codeEdits: {},
       sidebarOpen: true,
 
       completeLesson: (id) =>
@@ -45,6 +50,17 @@ export const useProgress = create<ProgressState>()(
             [moduleId]: Math.max(s.quizScores[moduleId] ?? 0, score),
           },
         })),
+
+      setCodeEdit: (key, code) =>
+        set((s) => ({ codeEdits: { ...s.codeEdits, [key]: code } })),
+
+      getCodeEdit: (key) => get().codeEdits[key],
+
+      clearCodeEdit: (key) =>
+        set((s) => {
+          const { [key]: _, ...rest } = s.codeEdits;
+          return { codeEdits: rest };
+        }),
 
       toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
 

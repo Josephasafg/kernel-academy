@@ -152,6 +152,7 @@ export function PuzzleView() {
         <div className="w-3/5 p-4">
           <CodePlayground
             initialCode={puzzle.starterCode}
+            storageKey={puzzle.id}
             testCode={puzzle.testCode}
             onSuccess={handleSuccess}
           />

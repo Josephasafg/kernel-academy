@@ -1,6 +1,7 @@
 import Editor from '@monaco-editor/react';
 import { useState, useCallback, useRef } from 'react';
 import { runCode, isPyodideReady } from '../engine/pyodideRunner';
+import { useProgress } from '../store/progress';
 import {
   Play,
   RotateCcw,
@@ -12,6 +13,7 @@ import {
 
 interface Props {
   initialCode: string;
+  storageKey?: string;
   testCode?: string;
   readOnly?: boolean;
   onSuccess?: () => void;
@@ -21,13 +23,17 @@ interface Props {
 
 export function CodePlayground({
   initialCode,
+  storageKey,
   testCode,
   readOnly = false,
   onSuccess,
   onCodeChange,
   height = '100%',
 }: Props) {
-  const [code, setCode] = useState(initialCode);
+  const { getCodeEdit, setCodeEdit, clearCodeEdit } = useProgress();
+  const savedCode = storageKey ? getCodeEdit(storageKey) : undefined;
+
+  const [code, setCode] = useState(savedCode ?? initialCode);
   const [output, setOutput] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'running' | 'success' | 'error'>('idle');
   const [loadingMsg, setLoadingMsg] = useState('');
@@ -41,9 +47,10 @@ export function CodePlayground({
     (value: string | undefined) => {
       const v = value ?? '';
       setCode(v);
+      if (storageKey) setCodeEdit(storageKey, v);
       onCodeChange?.(v);
     },
-    [onCodeChange],
+    [storageKey, setCodeEdit, onCodeChange],
   );
 
   const handleRun = useCallback(async () => {
@@ -75,9 +82,10 @@ export function CodePlayground({
 
   const handleReset = useCallback(() => {
     setCode(initialCode);
+    if (storageKey) clearCodeEdit(storageKey);
     setOutput('');
     setStatus('idle');
-  }, [initialCode]);
+  }, [initialCode, storageKey, clearCodeEdit]);
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-xl border border-white/[0.06] bg-[#0a0e1a]">

@@ -95,7 +95,7 @@ export function LessonView() {
 
         {/* Code playground */}
         <div className="w-1/2 p-4">
-          <CodePlayground initialCode={lesson.code} readOnly={false} />
+          <CodePlayground initialCode={lesson.code} storageKey={lesson.id} readOnly={false} />
         </div>
       </div>
 

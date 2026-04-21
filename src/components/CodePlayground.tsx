@@ -185,7 +185,7 @@ export function CodePlayground({
         />
       </div>
 
-      {/* Output — lab notebook annotation */}
+      {/* Output: lab notebook annotation */}
       <div className="border-t border-wine-glow/40 bg-wine/60">
         <div className="flex items-baseline justify-between border-b border-wine-glow/30 px-4 py-1.5">
           <span className="font-sans text-[10.5px] uppercase tracking-widest-caps text-parchment-mute">
@@ -204,12 +204,12 @@ export function CodePlayground({
           }`}
         >
           {status === 'idle' && (
-            <span className="font-ital italic text-parchment-mute">
+            <span className="italic text-parchment-mute">
               Press <span className="text-gold">Execute</span> to run this kernel.
             </span>
           )}
           {(status === 'loading' || status === 'running') && (
-            <span className="font-ital italic text-copper">
+            <span className="italic text-copper">
               {loadingMsg || 'Executing…'}
             </span>
           )}

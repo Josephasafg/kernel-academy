@@ -215,18 +215,19 @@
   }
   .prose-editorial blockquote {
     @apply my-7 border-l border-copper/60 py-2 pl-6 italic text-parchment-dim;
-    font-family: 'Instrument Serif', serif;
-    font-size: 20px;
-    line-height: 1.5;
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 400;
+    font-size: 19px;
+    line-height: 1.55;
   }
   .prose-editorial strong {
     @apply font-semibold text-gold;
   }
   .prose-editorial em {
-    font-family: 'Instrument Serif', serif;
+    font-family: 'Fraunces', Georgia, serif;
     font-style: italic;
+    font-weight: 500;
     @apply text-parchment;
-    font-size: 1.06em;
   }
   .prose-editorial a {
     @apply text-copper underline decoration-copper/40 decoration-1 underline-offset-4

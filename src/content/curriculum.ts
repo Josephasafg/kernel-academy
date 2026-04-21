@@ -72,7 +72,7 @@ GPUs execute thousands of operations in parallel. To harness this, we need to un
 
 ### Grids and Programs
 
-When you launch a Triton kernel, you specify a **grid** — the number of independent program instances to run.
+When you launch a Triton kernel, you specify a **grid**: the number of independent program instances to run.
 
 \`\`\`python
 # Launch 4 programs
@@ -96,11 +96,11 @@ offsets = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
 
 Almost every Triton kernel follows this pattern:
 
-1. **Get program ID** — \`pid = tl.program_id(0)\`
-2. **Compute offsets** — which elements does this program handle?
-3. **Load data** — read from input arrays
-4. **Compute** — do the actual work
-5. **Store results** — write to output array
+1. **Get program ID**: \`pid = tl.program_id(0)\`
+2. **Compute offsets**: which elements does this program handle?
+3. **Load data**: read from input arrays
+4. **Compute**: do the actual work
+5. **Store results**: write to output array
 
 ### Masks
 
@@ -169,11 +169,11 @@ def add_kernel(x_ptr, y_ptr, output_ptr, n, BLOCK_SIZE: tl.constexpr):
 
 ### Breaking It Down
 
-1. **\`@triton.jit\`** — Marks this as a Triton kernel
-2. **\`x_ptr, y_ptr, output_ptr\`** — Pointers to arrays in GPU memory
-3. **\`BLOCK_SIZE: tl.constexpr\`** — Compile-time constant (not a runtime variable)
-4. **\`tl.load(ptr + offsets, mask)\`** — Load a block of elements
-5. **\`tl.store(ptr + offsets, value, mask)\`** — Write a block of elements
+1. **\`@triton.jit\`**: Marks this as a Triton kernel
+2. **\`x_ptr, y_ptr, output_ptr\`**: Pointers to arrays in GPU memory
+3. **\`BLOCK_SIZE: tl.constexpr\`**: Compile-time constant (not a runtime variable)
+4. **\`tl.load(ptr + offsets, mask)\`**: Load a block of elements
+5. **\`tl.store(ptr + offsets, value, mask)\`**: Write a block of elements
 
 ### Pointer Arithmetic
 
@@ -391,7 +391,7 @@ When you pass an array to a kernel, Triton gives you a pointer to its first elem
 
 ### Block Pointers
 
-\`tl.arange(0, BLOCK_SIZE)\` creates a vector of indices. Adding this to a pointer creates a **block pointer** — a vector of pointers, each addressing a different element:
+\`tl.arange(0, BLOCK_SIZE)\` creates a vector of indices. Adding this to a pointer creates a **block pointer**: a vector of pointers, each addressing a different element:
 
 \`\`\`python
 offsets = tl.arange(0, BLOCK_SIZE)  # [0, 1, 2, ..., 255]
@@ -449,8 +449,8 @@ GPU kernels process data in fixed-size blocks, but real data rarely fits perfect
 ### The Problem
 
 If you have 1000 elements and BLOCK_SIZE=256:
-- Programs 0-2 handle elements [0..767] — all valid
-- Program 3 handles elements [768..1023] — only 232 are valid!
+- Programs 0-2 handle elements [0..767], all valid
+- Program 3 handles elements [768..1023], only 232 are valid!
 
 Without a mask, program 3 would read/write 24 invalid elements.
 
@@ -651,7 +651,7 @@ print("PASSED")`,
           ],
           correctIndex: 1,
           explanation:
-            'Adding an offset array to a pointer creates a block pointer — a collection of addresses that tl.load/tl.store can use to access multiple elements at once.',
+            'Adding an offset array to a pointer creates a block pointer: a collection of addresses that tl.load/tl.store can use to access multiple elements at once.',
         },
       ],
     },
@@ -704,7 +704,7 @@ Used in transformers (BERT, GPT). The approximate version:
 
 In PyTorch, \`F.gelu(x)\` works fine. But if you need \`F.gelu(x * weight + bias)\`, that's 3 separate kernel launches (multiply, add, gelu). A Triton kernel does it in **one launch**, saving memory bandwidth.
 
-This is called **kernel fusion** — the topic of our next lesson.
+This is called **kernel fusion**, the topic of our next lesson.
 
 Run the example to see all three activations!`,
         code: `import triton
@@ -777,7 +777,7 @@ That's a **3x reduction** in memory traffic!
 
 ### Fusion in Triton
 
-Fusing is natural in Triton — you just write all operations in the same kernel:
+Fusing is natural in Triton; you just write all operations in the same kernel:
 
 \`\`\`python
 @triton.jit
@@ -827,7 +827,7 @@ fused_linear_relu_kernel[grid](x, weight, bias, output, n, BLOCK_SIZE=8)
 
 # Verify against numpy
 expected = np.maximum(x * weight + bias, 0.0)
-print(f"Fused ReLU(x*w+b) kernel — 4 arrays, 3 programs")
+print(f"Fused ReLU(x*w+b) kernel: 4 arrays, 3 programs")
 print(f"Max error: {np.max(np.abs(output - expected)):.2e}")
 print(f"Correct: {np.allclose(output, expected)}")
 print(f"% of activations > 0: {np.mean(output > 0)*100:.1f}%")
@@ -1019,7 +1019,7 @@ row_start = pid * stride
 offsets = row_start + tl.arange(0, BLOCK_SIZE)
 \`\`\`
 
-This maps naturally to operations like softmax, layer norm, and attention — all of which need per-row reductions.
+This maps naturally to operations like softmax, layer norm, and attention, all of which need per-row reductions.
 
 Run the example to see row-wise sum and max!`,
         code: `import triton
@@ -1109,7 +1109,7 @@ def softmax_kernel(input_ptr, output_ptr, n_cols, BLOCK: tl.constexpr):
     tl.store(output_ptr + row * n_cols + offsets, result, mask=mask)
 \`\`\`
 
-This is a real production pattern — Triton's fused softmax is faster than PyTorch's built-in on many GPUs!`,
+This is a real production pattern: Triton's fused softmax is faster than PyTorch's built-in on many GPUs!`,
         code: `import triton
 import triton.language as tl
 import numpy as np
@@ -1521,7 +1521,7 @@ Write a kernel that computes the dot product of two vectors:
 result = sum(a[i] * b[i]) for all i
 \`\`\`
 
-This is simpler than a full matmul — a single program loads both vectors, multiplies element-wise, and reduces with \`tl.sum\`.
+This is simpler than a full matmul: a single program loads both vectors, multiplies element-wise, and reduces with \`tl.sum\`.
 
 Steps:
 1. Load both input vectors with masking

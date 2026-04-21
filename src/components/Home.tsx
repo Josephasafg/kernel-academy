@@ -48,7 +48,7 @@ export function Home() {
               <div className="eyebrow mb-3">The Subject</div>
               <p className="font-display text-[15px] leading-relaxed text-parchment/80">
                 A field guide to writing GPU kernels in OpenAI&rsquo;s{' '}
-                <em className="font-ital italic text-gold">Triton</em>, from first principles to
+                <em className="italic text-gold">Triton</em>, from first principles to
                 production patterns used inside modern inference engines.
               </p>
             </div>
@@ -57,8 +57,8 @@ export function Home() {
               <div className="eyebrow mb-3">The Method</div>
               <p className="font-display text-[15px] leading-relaxed text-parchment/80">
                 Seven chapters, forty-odd lessons, a handful of puzzles, and a laboratory
-                in which every kernel you write runs directly in the margin &mdash;{' '}
-                <em className="font-ital italic">sans</em> graphics card.
+                in which every kernel you write runs directly in the margin,{' '}
+                <em className="italic">sans</em> graphics card.
               </p>
             </div>
 
@@ -200,12 +200,12 @@ export function Home() {
             </div>
             <div className="col-span-12 md:col-span-9 font-display text-[15px] leading-relaxed text-parchment/75">
               <p>
-                Set in <em className="font-ital italic">Fraunces</em> and{' '}
-                <em className="font-ital italic">Instrument Serif</em>, with code
+                Set in <em className="italic">Fraunces</em> and{' '}
+                <em className="italic">Instrument Serif</em>, with code
                 specimens in <span className="font-mono text-[13px] text-gold">IBM Plex Mono</span>.
                 Executed in the browser by way of Pyodide &amp; NumPy. Inspired by{' '}
-                <em className="font-ital italic">Triton-Puzzles</em> (GPU MODE) and the kernels
-                of <em className="font-ital italic">vLLM</em>.
+                <em className="italic">Triton-Puzzles</em> (GPU MODE) and the kernels
+                of <em className="italic">vLLM</em>.
               </p>
             </div>
           </div>

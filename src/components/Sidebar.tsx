@@ -150,9 +150,17 @@ export function Sidebar() {
 
       {/* Colophon */}
       <div className="border-t border-wine-glow/40 px-7 py-5">
-        <p className="font-ital text-[13px] italic leading-snug text-parchment-mute">
-          &ldquo;Runs in the reader&rsquo;s browser, by way of Pyodide &amp; NumPy. No graphics processor required.&rdquo;
-        </p>
+        <button
+          onClick={() => navigate('/about')}
+          className={`flex items-baseline gap-2 font-sans text-[10.5px] uppercase tracking-widest-caps
+                      transition-colors ${
+                        location.pathname === '/about'
+                          ? 'text-gold'
+                          : 'text-copper hover:text-gold'
+                      }`}
+        >
+          <span>§</span> About the Author
+        </button>
       </div>
     </aside>
   );

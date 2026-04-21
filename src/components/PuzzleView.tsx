@@ -96,14 +96,14 @@ export function PuzzleView() {
               </ReactMarkdown>
             </div>
 
-            {/* Hints — styled as marginalia */}
+            {/* Hints: styled as marginalia */}
             {puzzle.hints.length > 0 && (
               <div className="mt-10">
                 <button
                   onClick={() => setShowHints(!showHints)}
                   className="btn-ghost !text-copper"
                 >
-                  {showHints ? '— Withdraw hints' : '＋ A hint, if needed'}
+                  {showHints ? 'Withdraw hints' : 'A hint, if needed'}
                 </button>
 
                 {showHints && (
@@ -131,13 +131,13 @@ export function PuzzleView() {
               </div>
             )}
 
-            {/* Solution reveal — answer key */}
+            {/* Solution reveal */}
             <div className="mt-8">
               <button
                 onClick={() => setShowSolution(!showSolution)}
                 className="btn-ghost !text-parchment-mute hover:!text-bordeaux"
               >
-                {showSolution ? '— Hide the answer' : 'Reveal the answer'}
+                {showSolution ? 'Hide the answer' : 'Reveal the answer'}
               </button>
 
               {showSolution && (
@@ -178,7 +178,7 @@ export function PuzzleView() {
           <div className="flex items-center justify-between">
             <div className="flex items-baseline gap-3 font-display text-[16px] text-sage">
               <span className="font-ital italic text-[18px]">◆</span>
-              <em className="font-ital italic">Quod erat demonstrandum.</em>
+              <em className="italic">Quod erat demonstrandum.</em>
               <span className="text-parchment-dim">The exercise is solved.</span>
             </div>
             {nextPuzzle ? (

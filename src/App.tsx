@@ -4,6 +4,7 @@ import { Home } from './components/Home';
 import { LessonView } from './components/LessonView';
 import { PuzzleView } from './components/PuzzleView';
 import { QuizView } from './components/QuizView';
+import { About } from './components/About';
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
           element={<PuzzleView />}
         />
         <Route path="module/:moduleId/quiz" element={<QuizView />} />
+        <Route path="about" element={<About />} />
       </Route>
     </Routes>
   );

@@ -2,17 +2,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { curriculum } from '../content/curriculum';
 import { useProgress } from '../store/progress';
 import { CodePlayground } from './CodePlayground';
+import { toRoman } from '../utils/roman';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useState, useCallback } from 'react';
-import {
-  ChevronRight,
-  Lightbulb,
-  Eye,
-  EyeOff,
-  Trophy,
-  ArrowRight,
-} from 'lucide-react';
+import { Check } from 'lucide-react';
 
 export function PuzzleView() {
   const { moduleId, puzzleId } = useParams();
@@ -35,93 +29,101 @@ export function PuzzleView() {
   if (!mod || !puzzle) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-slate-500">Puzzle not found.</p>
+        <p className="font-display italic text-parchment-mute">
+          The requested exercise could not be found.
+        </p>
       </div>
     );
   }
 
+  const modIdx = curriculum.findIndex((m) => m.id === mod.id);
   const puzzleIdx = mod.puzzles.findIndex((p) => p.id === puzzleId);
   const alreadySolved = isPuzzleSolved(puzzle.id);
   const nextPuzzle = puzzleIdx < mod.puzzles.length - 1 ? mod.puzzles[puzzleIdx + 1] : null;
 
-  const diffColor: Record<string, string> = {
-    easy: 'text-emerald-400 bg-emerald-500/10',
-    medium: 'text-amber-400 bg-amber-500/10',
-    hard: 'text-rose-400 bg-rose-500/10',
+  const diffTint: Record<string, string> = {
+    easy: 'text-sage',
+    medium: 'text-gold',
+    hard: 'text-bordeaux',
   };
+
+  const cleanTitle = puzzle.title.replace(/^Puzzle:\s*/, '');
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
-      <header className="flex items-center justify-between border-b border-white/[0.04] bg-surface/40 px-8 py-3.5">
-        <div className="flex items-center gap-2 text-sm">
-          <button
-            onClick={() => navigate('/')}
-            className="text-slate-500 hover:text-white transition-colors"
-          >
-            Home
+      <header className="flex items-center justify-between border-b border-wine-glow/40 bg-wine-deep/40 px-10 py-4">
+        <div className="flex items-baseline gap-4 font-sans text-[10.5px] uppercase tracking-widest-caps text-parchment-mute">
+          <button onClick={() => navigate('/')} className="hover:text-parchment">
+            Kernel Academy
           </button>
-          <ChevronRight size={12} className="text-slate-700" />
-          <span className="text-slate-400">{mod.title}</span>
-          <ChevronRight size={12} className="text-slate-700" />
-          <span className="text-white font-medium">{puzzle.title}</span>
+          <span className="text-copper">◆</span>
+          <span>
+            Ch. {toRoman(modIdx + 1)} &nbsp;·&nbsp;{' '}
+            <span className="font-serif normal-case tracking-normal text-parchment-dim">
+              {mod.title}
+            </span>
+          </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className={`badge ${diffColor[puzzle.difficulty]}`}>
+        <div className="flex items-center gap-4">
+          <span className={`diff-pill ${diffTint[puzzle.difficulty]}`}>
             {puzzle.difficulty}
           </span>
           {(solved || alreadySolved) && (
-            <span className="badge badge-beginner gap-1">
-              <Trophy size={10} /> Solved
+            <span className="diff-pill flex items-center gap-1.5 text-sage">
+              <Check size={11} /> Solved
             </span>
           )}
         </div>
       </header>
 
-      {/* Content */}
       <div className="flex flex-1 min-h-0">
-        {/* Left: Description + Hints */}
-        <div className="w-[42%] overflow-y-auto border-r border-white/[0.04]">
-          <div className="mx-auto max-w-[520px] px-10 py-12">
-            <h1 className="mb-5 text-2xl font-bold tracking-tight text-white">
-              {puzzle.title}
+        {/* Problem column */}
+        <div className="w-[42%] overflow-y-auto border-r border-wine-glow/40">
+          <div className="mx-auto max-w-[520px] px-12 py-14">
+            <div className="eyebrow mb-4">
+              Exercise {toRoman(puzzleIdx + 1)}
+            </div>
+            <h1 className="font-display text-[38px] font-semibold leading-[1.08] text-parchment-ink"
+                style={{ fontVariationSettings: "'opsz' 48, 'SOFT' 100", letterSpacing: '-0.015em' }}>
+              {cleanTitle}
             </h1>
+            <div className="mt-5 h-px w-16 bg-copper" />
 
-            <div className="lesson-content mb-8">
+            <div className="prose-editorial mt-8">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {puzzle.description}
               </ReactMarkdown>
             </div>
 
-            {/* Hints */}
+            {/* Hints — styled as marginalia */}
             {puzzle.hints.length > 0 && (
-              <div className="mb-6">
+              <div className="mt-10">
                 <button
                   onClick={() => setShowHints(!showHints)}
-                  className="btn-ghost !px-0 text-amber-400"
+                  className="btn-ghost !text-copper"
                 >
-                  <Lightbulb size={14} />
-                  {showHints ? 'Hide Hints' : 'Show Hints'}
+                  {showHints ? '— Withdraw hints' : '＋ A hint, if needed'}
                 </button>
 
                 {showHints && (
-                  <div className="mt-3 space-y-2">
+                  <div className="mt-4 space-y-3 border-l border-copper/40 pl-5">
                     {puzzle.hints.slice(0, hintLevel + 1).map((hint, i) => (
-                      <div
-                        key={i}
-                        className="rounded-lg border border-amber-500/10 bg-amber-500/5 p-3 text-sm text-amber-200/80"
-                      >
-                        <strong className="text-amber-400">Hint {i + 1}:</strong>{' '}
-                        {hint}
+                      <div key={i}>
+                        <div className="eyebrow mb-1 !text-copper/80">
+                          Hint {toRoman(i + 1)}
+                        </div>
+                        <p className="font-ital text-[15px] italic leading-relaxed text-parchment/85">
+                          {hint}
+                        </p>
                       </div>
                     ))}
                     {hintLevel < puzzle.hints.length - 1 && (
                       <button
                         onClick={() => setHintLevel((h) => h + 1)}
-                        className="text-xs text-amber-500/60 hover:text-amber-400"
+                        className="btn-ghost !text-copper/70"
                       >
-                        Show next hint...
+                        Another hint →
                       </button>
                     )}
                   </div>
@@ -129,64 +131,71 @@ export function PuzzleView() {
               </div>
             )}
 
-            {/* Solution toggle */}
-            <div>
+            {/* Solution reveal — answer key */}
+            <div className="mt-8">
               <button
                 onClick={() => setShowSolution(!showSolution)}
-                className="btn-ghost !px-0 text-rose-400"
+                className="btn-ghost !text-parchment-mute hover:!text-bordeaux"
               >
-                {showSolution ? <EyeOff size={14} /> : <Eye size={14} />}
-                {showSolution ? 'Hide Solution' : 'Reveal Solution'}
+                {showSolution ? '— Hide the answer' : 'Reveal the answer'}
               </button>
 
               {showSolution && (
-                <pre className="mt-3 overflow-x-auto rounded-lg border border-rose-500/10 bg-rose-500/5 p-4 font-mono text-xs text-slate-300">
-                  {puzzle.solution}
-                </pre>
+                <div className="mt-4 border border-wine-glow/50 bg-wine-deep/80 p-5">
+                  <div className="eyebrow mb-3 !text-bordeaux">Answer Key</div>
+                  <pre className="overflow-x-auto font-mono text-[12.5px] leading-relaxed text-parchment/90">
+                    {puzzle.solution}
+                  </pre>
+                </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Right: Code editor */}
-        <div className="w-[58%] p-5">
-          <CodePlayground
-            key={puzzle.id}
-            initialCode={puzzle.starterCode}
-            storageKey={puzzle.id}
-            testCode={puzzle.testCode}
-            onSuccess={handleSuccess}
-          />
+        {/* Code lab */}
+        <div className="flex w-[58%] flex-col overflow-hidden p-5">
+          <div className="mb-3 flex items-baseline justify-between">
+            <div className="eyebrow">Your Attempt</div>
+            <span className="font-ital text-[12px] italic text-parchment-mute">
+              Running the kernel executes the tests below.
+            </span>
+          </div>
+          <div className="flex-1 min-h-0">
+            <CodePlayground
+              key={puzzle.id}
+              initialCode={puzzle.starterCode}
+              storageKey={puzzle.id}
+              testCode={puzzle.testCode}
+              onSuccess={handleSuccess}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Success banner */}
+      {/* Solved banner */}
       {(solved || alreadySolved) && (
-        <div className="border-t border-emerald-500/20 bg-emerald-500/5 px-6 py-3">
+        <div className="border-t border-sage/30 bg-sage/[0.08] px-10 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-emerald-400">
-              <Trophy size={16} />
-              <span className="text-sm font-medium">
-                Puzzle solved! Great work.
-              </span>
+            <div className="flex items-baseline gap-3 font-display text-[16px] text-sage">
+              <span className="font-ital italic text-[18px]">◆</span>
+              <em className="font-ital italic">Quod erat demonstrandum.</em>
+              <span className="text-parchment-dim">The exercise is solved.</span>
             </div>
             {nextPuzzle ? (
               <button
                 onClick={() =>
                   navigate(`/module/${mod.id}/puzzle/${nextPuzzle.id}`)
                 }
-                className="btn-primary !py-1.5 !text-xs"
+                className="btn-primary !border-sage/40 !text-sage hover:!text-gold"
               >
-                Next Puzzle
-                <ArrowRight size={14} />
+                Next Exercise →
               </button>
             ) : (
               <button
                 onClick={() => navigate(`/module/${mod.id}/quiz`)}
-                className="btn-primary !py-1.5 !text-xs"
+                className="btn-primary !border-sage/40 !text-sage hover:!text-gold"
               >
-                Take the Quiz
-                <ArrowRight size={14} />
+                To the Examination →
               </button>
             )}
           </div>

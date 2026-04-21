@@ -7,19 +7,17 @@ export function Layout() {
   const { sidebarOpen, toggleSidebar } = useProgress();
 
   return (
-    <div className="flex h-screen overflow-hidden bg-void">
-      {/* Mobile sidebar toggle */}
+    <div className="flex h-screen overflow-hidden bg-wine">
       <button
         onClick={toggleSidebar}
-        className="fixed left-4 top-4 z-50 rounded-lg bg-surface-light/90 p-2 backdrop-blur
-                   text-slate-400 hover:text-white transition-colors lg:hidden"
+        className="fixed left-4 top-4 z-50 border border-wine-glow/50 bg-wine-deep/90 p-2
+                   text-parchment-dim transition-colors hover:text-parchment lg:hidden"
       >
-        {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+        {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
       </button>
 
-      {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-40 w-72 transform transition-transform duration-300 ease-out
+        className={`fixed inset-y-0 left-0 z-40 w-[288px] transform transition-transform duration-300 ease-out
                     lg:relative lg:translate-x-0 ${
                       sidebarOpen ? 'translate-x-0' : '-translate-x-full'
                     }`}
@@ -27,15 +25,13 @@ export function Layout() {
         <Sidebar />
       </div>
 
-      {/* Backdrop for mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-30 bg-wine-deep/80 backdrop-blur-sm lg:hidden"
           onClick={toggleSidebar}
         />
       )}
 
-      {/* Main content */}
       <main className="flex-1 overflow-y-auto">
         <Outlet />
       </main>

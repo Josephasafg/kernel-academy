@@ -4,45 +4,52 @@ export default {
   theme: {
     extend: {
       colors: {
-        void: '#050a15',
-        surface: {
-          DEFAULT: '#0c1222',
-          light: '#141c30',
-          lighter: '#1a2540',
+        wine: {
+          DEFAULT: '#280611',
+          deep: '#1a0308',
+          soft: '#3d0b1c',
+          glow: '#5c1026',
+          light: '#6d1a2e',
         },
-        accent: {
-          cyan: '#06b6d4',
-          purple: '#8b5cf6',
-          blue: '#3b82f6',
+        claret: '#9f2e4a',
+        bordeaux: '#c44569',
+        oxblood: '#7a1a2e',
+        parchment: {
+          DEFAULT: '#f4e8d7',
+          dim: '#d4c5a9',
+          mute: '#a89a7f',
+          ink: '#f9f2e5',
         },
-        neon: {
-          cyan: '#22d3ee',
-          purple: '#a78bfa',
+        bone: '#e8dcc4',
+        gold: {
+          DEFAULT: '#c9a961',
+          deep: '#a8893f',
         },
+        copper: '#b87333',
+        sage: '#8fa173',
+        rust: '#b85838',
       },
       fontFamily: {
-        mono: ['"JetBrains Mono"', '"Fira Code"', 'monospace'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Fraunces', 'Georgia', 'serif'],
+        serif: ['Fraunces', 'Georgia', 'serif'],
+        italic: ['"Instrument Serif"', 'Georgia', 'serif'],
+        sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
+        mono: ['"IBM Plex Mono"', 'monospace'],
+      },
+      letterSpacing: {
+        'caps': '0.18em',
+        'widest': '0.24em',
+      },
+      backgroundImage: {
+        'grain': "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.91 0 0 0 0 0.84 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E\")",
       },
       animation: {
-        glow: 'glow 2s ease-in-out infinite alternate',
-        float: 'float 6s ease-in-out infinite',
-        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'fade-up': 'fade-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards',
       },
       keyframes: {
-        glow: {
-          '0%': {
-            boxShadow:
-              '0 0 5px rgba(6,182,212,0.5), 0 0 10px rgba(6,182,212,0.3)',
-          },
-          '100%': {
-            boxShadow:
-              '0 0 10px rgba(6,182,212,0.8), 0 0 20px rgba(6,182,212,0.5)',
-          },
-        },
-        float: {
-          '0%, 100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-10px)' },
+        'fade-up': {
+          '0%': { opacity: '0', transform: 'translateY(12px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
       },
     },

@@ -1,200 +1,230 @@
 import { useNavigate } from 'react-router-dom';
 import { curriculum } from '../content/curriculum';
 import { useProgress } from '../store/progress';
-import {
-  Cpu,
-  Zap,
-  Globe,
-  BookOpen,
-  ArrowRight,
-  Puzzle,
-  GraduationCap,
-} from 'lucide-react';
+import { toRoman } from '../utils/roman';
 import type { Difficulty } from '../types';
 
-const difficultyBadge: Record<Difficulty, string> = {
-  beginner: 'badge-beginner',
-  intermediate: 'badge-intermediate',
-  advanced: 'badge-advanced',
-  expert: 'badge-expert',
-};
-
-const moduleIcons: Record<string, React.ReactNode> = {
-  'mod-1': <span className="text-2xl">01</span>,
-  'mod-2': <span className="text-2xl">02</span>,
-  'mod-3': <span className="text-2xl">03</span>,
-  'mod-4': <span className="text-2xl">04</span>,
-  'mod-5': <span className="text-2xl">05</span>,
-  'mod-6': <span className="text-2xl">06</span>,
-  'mod-7': <span className="text-2xl">07</span>,
+const diffClass: Record<Difficulty, string> = {
+  beginner: 'diff-beginner',
+  intermediate: 'diff-intermediate',
+  advanced: 'diff-advanced',
+  expert: 'diff-expert',
 };
 
 export function Home() {
   const navigate = useNavigate();
   const progress = useProgress();
 
+  const totalLessons = curriculum.reduce((s, m) => s + m.lessons.length, 0);
+  const totalPuzzles = curriculum.reduce((s, m) => s + m.puzzles.length, 0);
+
   return (
     <div className="min-h-screen">
-      {/* Hero */}
-      <section className="relative overflow-hidden border-b border-white/[0.04] px-8 py-28">
-        {/* Background effects */}
-        <div className="bg-grid-pattern absolute inset-0" />
-        <div
-          className="absolute left-1/2 top-0 h-[600px] w-[800px] -translate-x-1/2 -translate-y-1/2"
-          style={{
-            background:
-              'radial-gradient(ellipse, rgba(6,182,212,0.08) 0%, rgba(139,92,246,0.04) 40%, transparent 70%)',
-          }}
-        />
+      {/* Masthead hero */}
+      <section className="relative border-b border-wine-glow/40 px-12 pb-24 pt-24">
+        {/* Top meta bar */}
+        <div className="mx-auto mb-20 flex max-w-[1100px] items-center justify-between">
+          <div className="eyebrow">Vol. I &nbsp;·&nbsp; MMXXVI</div>
+          <div className="eyebrow">Written for the curious engineer</div>
+        </div>
 
-        <div className="relative mx-auto max-w-4xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-accent-cyan/20 bg-accent-cyan/5 px-4 py-1.5">
-            <Cpu size={14} className="text-accent-cyan" />
-            <span className="text-xs font-medium text-accent-cyan">
-              Interactive GPU Programming Course
-            </span>
-          </div>
-
-          <h1 className="mb-5 text-5xl font-extrabold tracking-tight sm:text-7xl">
-            <span className="text-white">Master </span>
-            <span className="text-gradient">Triton</span>
+        <div className="mx-auto max-w-[1100px]">
+          {/* Hero title */}
+          <h1
+            className="font-display text-[96px] font-semibold leading-[0.92] text-parchment-ink sm:text-[120px] lg:text-[150px]"
+            style={{
+              fontVariationSettings: "'opsz' 144, 'SOFT' 100",
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Kernel
+            <br />
+            <span className="font-ital font-normal text-gold italic">Academy</span>
+            <span className="text-copper">.</span>
           </h1>
 
-          <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-slate-400">
-            Learn GPU kernel programming from zero to expert. Write real Triton
-            code, solve puzzles, and run everything directly in your browser
-            &mdash; no GPU required.
-          </p>
+          <div className="mt-10 grid grid-cols-12 gap-x-8">
+            <div className="col-span-12 md:col-span-4">
+              <div className="eyebrow mb-3">The Subject</div>
+              <p className="font-display text-[15px] leading-relaxed text-parchment/80">
+                A field guide to writing GPU kernels in OpenAI&rsquo;s{' '}
+                <em className="font-ital italic text-gold">Triton</em>, from first principles to
+                production patterns used inside modern inference engines.
+              </p>
+            </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            <button
-              onClick={() => {
-                const first = curriculum[0];
-                if (first?.lessons[0]) {
-                  navigate(
-                    `/module/${first.id}/lesson/${first.lessons[0].id}`,
-                  );
-                }
-              }}
-              className="btn-primary text-base"
-            >
-              Start Learning
-              <ArrowRight size={18} />
-            </button>
-          </div>
+            <div className="col-span-12 md:col-span-4 md:col-start-6">
+              <div className="eyebrow mb-3">The Method</div>
+              <p className="font-display text-[15px] leading-relaxed text-parchment/80">
+                Seven chapters, forty-odd lessons, a handful of puzzles, and a laboratory
+                in which every kernel you write runs directly in the margin &mdash;{' '}
+                <em className="font-ital italic">sans</em> graphics card.
+              </p>
+            </div>
 
-          {/* Feature pills */}
-          <div className="mt-12 flex flex-wrap justify-center gap-3">
-            {[
-              { icon: <Globe size={14} />, text: 'Browser-Based' },
-              { icon: <Zap size={14} />, text: 'No GPU Required' },
-              { icon: <Puzzle size={14} />, text: 'Interactive Puzzles' },
-              {
-                icon: <GraduationCap size={14} />,
-                text: 'Beginner to Expert',
-              },
-            ].map(({ icon, text }) => (
-              <div
-                key={text}
-                className="flex items-center gap-2 rounded-full border border-white/[0.06]
-                           bg-surface/60 px-4 py-2 text-xs text-slate-400"
-              >
-                {icon}
-                {text}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Module Grid */}
-      <section className="mx-auto max-w-6xl px-8 py-20">
-        <div className="mb-12 flex items-end justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-white">Curriculum</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              {curriculum.length} modules &middot; {curriculum.reduce((s, m) => s + m.lessons.length, 0)} lessons
-              &middot; {curriculum.reduce((s, m) => s + m.puzzles.length, 0)} puzzles
-            </p>
-          </div>
-        </div>
-
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {curriculum.map((mod) => {
-            const totalItems =
-              mod.lessons.length + mod.puzzles.length + 1;
-            const pct = Math.round(
-              progress.getModuleProgress(mod.id, totalItems) * 100,
-            );
-
-            return (
+            <div className="col-span-12 md:col-span-3 md:col-start-10">
+              <div className="eyebrow mb-3">Begin</div>
               <button
-                key={mod.id}
-                onClick={() =>
-                  navigate(
-                    `/module/${mod.id}/lesson/${mod.lessons[0]?.id}`,
-                  )
-                }
-                className="glass-card-hover group relative p-7 text-left"
+                onClick={() => {
+                  const first = curriculum[0];
+                  if (first?.lessons[0]) {
+                    navigate(`/module/${first.id}/lesson/${first.lessons[0].id}`);
+                  }
+                }}
+                className="group flex items-baseline gap-3 font-display text-[28px] font-semibold
+                           text-parchment transition-colors hover:text-gold"
+                style={{ fontVariationSettings: "'opsz' 36, 'SOFT' 80" }}
               >
-                {/* Module number */}
-                <div className="mb-4 flex items-start justify-between">
-                  <div
-                    className="flex h-12 w-12 items-center justify-center rounded-xl
-                               bg-gradient-to-br from-cyan-500/10 to-purple-600/10
-                               font-mono text-lg font-bold text-accent-cyan
-                               transition-colors group-hover:from-cyan-500/20 group-hover:to-purple-600/20"
-                  >
-                    {moduleIcons[mod.id] ?? mod.id.slice(-1)}
-                  </div>
-                  <span className={difficultyBadge[mod.difficulty]}>
-                    {mod.difficulty}
-                  </span>
-                </div>
-
-                <h3 className="mb-1.5 text-base font-semibold text-white">
-                  {mod.title}
-                </h3>
-                <p className="mb-4 text-sm leading-relaxed text-slate-500">
-                  {mod.description}
-                </p>
-
-                {/* Item counts */}
-                <div className="mb-3 flex gap-4 text-[11px] text-slate-500">
-                  <span className="flex items-center gap-1">
-                    <BookOpen size={11} />
-                    {mod.lessons.length} lessons
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Puzzle size={11} />
-                    {mod.puzzles.length} puzzle{mod.puzzles.length !== 1 && 's'}
-                  </span>
-                </div>
-
-                {/* Progress bar */}
-                <div className="h-1 overflow-hidden rounded-full bg-white/[0.04]">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-accent-cyan to-accent-purple transition-all duration-500"
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                {pct > 0 && (
-                  <p className="mt-1.5 text-[10px] text-slate-600">
-                    {pct}% complete
-                  </p>
-                )}
-
-                {/* Hover arrow */}
-                <ArrowRight
-                  size={16}
-                  className="absolute bottom-6 right-6 text-slate-600 transition-all
-                             group-hover:translate-x-1 group-hover:text-accent-cyan"
-                />
+                <span className="font-ital text-[22px] font-normal italic text-copper
+                                  transition-transform group-hover:-translate-x-1">
+                  →
+                </span>
+                Chapter the First
               </button>
-            );
-          })}
+            </div>
+          </div>
+        </div>
+
+        {/* Counts line */}
+        <div className="mx-auto mt-24 max-w-[1100px]">
+          <div className="rule-ornate mb-6">
+            <span className="font-ital text-[14px] italic">◆</span>
+          </div>
+          <div className="flex flex-wrap justify-center gap-x-12 gap-y-3 font-display text-[13px] text-parchment-dim">
+            <Stat label="Chapters" value={curriculum.length} />
+            <Stat label="Lessons" value={totalLessons} />
+            <Stat label="Puzzles" value={totalPuzzles} />
+            <Stat label="Examinations" value={curriculum.length} />
+          </div>
         </div>
       </section>
+
+      {/* Table of contents */}
+      <section className="relative px-12 py-24">
+        <div className="mx-auto max-w-[1100px]">
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="font-display text-[56px] font-semibold leading-none text-parchment-ink"
+                style={{ fontVariationSettings: "'opsz' 72, 'SOFT' 100", letterSpacing: '-0.015em' }}>
+              Contents<span className="text-copper">.</span>
+            </h2>
+            <div className="eyebrow">In {toRoman(curriculum.length)} Parts</div>
+          </div>
+          <div className="mb-14 h-px w-full bg-gradient-to-r from-copper via-wine-glow to-transparent" />
+
+          <ol className="space-y-0">
+            {curriculum.map((mod, idx) => {
+              const totalItems = mod.lessons.length + mod.puzzles.length + 1;
+              const pct = Math.round(progress.getModuleProgress(mod.id, totalItems) * 100);
+
+              return (
+                <li key={mod.id}>
+                  <button
+                    onClick={() =>
+                      navigate(`/module/${mod.id}/lesson/${mod.lessons[0]?.id}`)
+                    }
+                    className="group grid w-full grid-cols-12 items-start gap-6 border-t border-wine-glow/30
+                               py-9 text-left transition-colors hover:bg-wine-glow/[0.08] last:border-b"
+                  >
+                    {/* Roman numeral */}
+                    <div className="col-span-2 md:col-span-1">
+                      <div className="font-display text-[44px] font-medium leading-none text-copper
+                                      transition-colors group-hover:text-gold"
+                           style={{ fontVariationSettings: "'opsz' 72, 'SOFT' 20" }}>
+                        {toRoman(idx + 1)}
+                      </div>
+                    </div>
+
+                    {/* Title & description */}
+                    <div className="col-span-10 md:col-span-6">
+                      <h3 className="font-display text-[28px] font-semibold leading-[1.1] text-parchment-ink
+                                     transition-colors group-hover:text-gold"
+                          style={{ fontVariationSettings: "'opsz' 36, 'SOFT' 80", letterSpacing: '-0.01em' }}>
+                        {mod.title}
+                      </h3>
+                      <p className="mt-2 max-w-md font-display text-[14.5px] leading-relaxed text-parchment/70">
+                        {mod.description}
+                      </p>
+                    </div>
+
+                    {/* Meta */}
+                    <div className="col-span-6 md:col-span-3 md:pt-2">
+                      <div className="space-y-1.5 font-sans text-[11px] text-parchment-dim">
+                        <div className="flex items-baseline gap-2">
+                          <span className="uppercase tracking-caps text-parchment-mute">Lessons</span>
+                          <span className="flex-1 border-b border-dotted border-wine-glow/50" />
+                          <span className="font-display text-parchment numeral-lining">
+                            {toRoman(mod.lessons.length)}
+                          </span>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="uppercase tracking-caps text-parchment-mute">Puzzles</span>
+                          <span className="flex-1 border-b border-dotted border-wine-glow/50" />
+                          <span className="font-display text-parchment numeral-lining">
+                            {toRoman(Math.max(mod.puzzles.length, 1))}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Difficulty + progress */}
+                    <div className="col-span-6 md:col-span-2 md:pt-2 text-right">
+                      <span className={diffClass[mod.difficulty]}>
+                        {mod.difficulty}
+                      </span>
+                      {pct > 0 && (
+                        <div className="mt-3 flex items-center justify-end gap-2">
+                          <div className="h-px w-14 bg-wine-glow/60">
+                            <div className="h-full bg-gold transition-all"
+                                 style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="font-sans text-[10px] tracking-caps text-gold">
+                            {pct}%
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      </section>
+
+      {/* Colophon */}
+      <section className="border-t border-wine-glow/40 px-12 py-16">
+        <div className="mx-auto max-w-[1100px]">
+          <div className="grid grid-cols-12 gap-x-8">
+            <div className="col-span-12 md:col-span-3">
+              <div className="eyebrow mb-3">Colophon</div>
+            </div>
+            <div className="col-span-12 md:col-span-9 font-display text-[15px] leading-relaxed text-parchment/75">
+              <p>
+                Set in <em className="font-ital italic">Fraunces</em> and{' '}
+                <em className="font-ital italic">Instrument Serif</em>, with code
+                specimens in <span className="font-mono text-[13px] text-gold">IBM Plex Mono</span>.
+                Executed in the browser by way of Pyodide &amp; NumPy. Inspired by{' '}
+                <em className="font-ital italic">Triton-Puzzles</em> (GPU MODE) and the kernels
+                of <em className="font-ital italic">vLLM</em>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex items-baseline gap-2.5">
+      <span className="font-display text-[26px] font-semibold text-parchment numeral-lining"
+            style={{ fontVariationSettings: "'opsz' 36, 'SOFT' 80" }}>
+        {value}
+      </span>
+      <span className="font-sans text-[10.5px] uppercase tracking-widest-caps text-parchment-mute">
+        {label}
+      </span>
     </div>
   );
 }

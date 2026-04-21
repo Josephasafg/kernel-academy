@@ -80,7 +80,7 @@ export function About() {
 
         {/* Colophon / links */}
         <div className="mt-20 border-t border-wine-glow/40 pt-10">
-          <div className="grid grid-cols-2 gap-10">
+          <div className="grid grid-cols-2 gap-10 md:grid-cols-3">
             <ColophonCol label="LinkedIn">
               <a
                 href="https://www.linkedin.com/in/joseph-asaf-gardin/"
@@ -102,6 +102,16 @@ export function About() {
                            underline-offset-4 transition-colors hover:text-gold hover:decoration-gold/70"
               >
                 @Josephasafg
+              </a>
+            </ColophonCol>
+
+            <ColophonCol label="Correspondence">
+              <a
+                href="mailto:asaf.j.gardin@gmail.com"
+                className="font-display text-[16px] text-parchment underline decoration-copper/40
+                           underline-offset-4 transition-colors hover:text-gold hover:decoration-gold/70"
+              >
+                asaf.j.gardin@gmail.com
               </a>
             </ColophonCol>
           </div>

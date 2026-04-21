@@ -51,7 +51,7 @@ export function Sidebar() {
           <Cpu size={20} className="text-white" />
         </div>
         <div>
-          <h1 className="text-sm font-bold text-white">Triton Teacher</h1>
+          <h1 className="text-sm font-bold text-white">Kernel Academy</h1>
           <p className="text-[10px] uppercase tracking-wider text-slate-500">
             GPU Programming
           </p>

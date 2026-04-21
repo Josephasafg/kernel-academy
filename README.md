@@ -1,4 +1,4 @@
-# Triton Teacher
+# Kernel Academy
 
 Interactive web app for learning GPU kernel programming with [OpenAI Triton](https://github.com/triton-lang/triton). Write real Triton code, solve puzzles, and run everything in your browser — no GPU required.
 
@@ -30,8 +30,8 @@ A **NumPy-based Triton simulator** runs inside the browser via [Pyodide](https:/
 ## Getting Started
 
 ```bash
-git clone https://github.com/Josephasafg/triton-teacher.git
-cd triton-teacher
+git clone https://github.com/Josephasafg/kernel-academy.git
+cd kernel-academy
 npm install
 npm run dev
 ```

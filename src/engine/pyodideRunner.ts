@@ -24,7 +24,7 @@ export async function initPyodide(
     await py.loadPackage('numpy');
 
     onProgress?.('Loading Triton simulator...');
-    const simulatorCode = await fetch('/triton_simulator.py').then((r) =>
+    const simulatorCode = await fetch(`${import.meta.env.BASE_URL}triton_simulator.py`).then((r) =>
       r.text(),
     );
     await py.runPythonAsync(simulatorCode);

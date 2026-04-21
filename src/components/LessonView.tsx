@@ -187,10 +187,11 @@ function LessonNav({
           onClick={() => onNavigate(`/module/${moduleId}/puzzle/${puzzles[0].id}`)}
           className="group text-right"
         >
-          <div className="eyebrow mb-1">Exercise</div>
+          <div className="eyebrow !text-bordeaux mb-1">Next Puzzle</div>
           <div className="font-display text-[17px] italic text-parchment/80 transition-colors group-hover:text-gold">
+            <span className="mr-2 not-italic text-bordeaux">◆</span>
             {puzzles[0].title.replace(/^Puzzle:\s*/, '')}
-            <span className="ml-2 inline-block font-ital not-italic text-copper transition-transform group-hover:translate-x-1">
+            <span className="ml-2 inline-block font-ital not-italic text-bordeaux transition-transform group-hover:translate-x-1">
               →
             </span>
           </div>

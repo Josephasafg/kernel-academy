@@ -82,7 +82,7 @@ export function QuizView() {
             {mod.title}
             <span className="text-copper">.</span>
           </h1>
-          <p className="mt-4 font-ital text-[18px] italic text-parchment/80">
+          <p className="mt-4 text-[18px] italic text-parchment/80">
             {quiz.questions.length} questions to measure your understanding.
           </p>
           <div className="mt-6 h-px w-20 bg-copper" />
@@ -196,7 +196,7 @@ export function QuizView() {
           <div className="mt-16 border-t border-wine-glow/40 pt-10">
             {!submitted ? (
               <div className="flex items-center justify-between">
-                <p className="font-ital text-[15px] italic text-parchment-mute">
+                <p className="text-[15px] italic text-parchment-mute">
                   {Object.keys(answers).length} of {quiz.questions.length} answered
                 </p>
                 <button
@@ -216,7 +216,7 @@ export function QuizView() {
                           style={{ fontVariationSettings: "'opsz' 72, 'SOFT' 100" }}>
                       {correctCount}
                     </span>
-                    <span className="font-ital text-[22px] italic text-parchment-mute">
+                    <span className="text-[22px] italic text-parchment-mute">
                       of {quiz.questions.length} correct
                     </span>
                   </div>

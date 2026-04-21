@@ -6,7 +6,7 @@ import { toRoman } from '../utils/roman';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useState, useCallback } from 'react';
-import { Check } from 'lucide-react';
+import { Check, Copy } from 'lucide-react';
 
 export function PuzzleView() {
   const { moduleId, puzzleId } = useParams();
@@ -30,7 +30,7 @@ export function PuzzleView() {
     return (
       <div className="flex h-full items-center justify-center">
         <p className="font-display italic text-parchment-mute">
-          The requested exercise could not be found.
+          The requested puzzle could not be found.
         </p>
       </div>
     );
@@ -56,7 +56,7 @@ export function PuzzleView() {
           <button onClick={() => navigate('/')} className="shrink-0 hover:text-parchment">
             Home
           </button>
-          <span className="text-copper">◆</span>
+          <span className="text-bordeaux">◆</span>
           <span className="min-w-0 truncate">
             <span className="hidden sm:inline">Ch. {toRoman(modIdx + 1)} &nbsp;·&nbsp;{' '}</span>
             <span className="font-serif normal-case tracking-normal text-parchment-dim">
@@ -81,14 +81,14 @@ export function PuzzleView() {
         {/* Problem column */}
         <div className="w-full border-b border-wine-glow/40 lg:w-[42%] lg:overflow-y-auto lg:border-b-0 lg:border-r">
           <div className="mx-auto max-w-[520px] px-6 py-10 md:px-10 md:py-12 lg:px-12 lg:py-14">
-            <div className="eyebrow mb-4">
-              Exercise {toRoman(puzzleIdx + 1)}
+            <div className="eyebrow !text-bordeaux mb-4">
+              ◆ Puzzle {toRoman(puzzleIdx + 1)} of {toRoman(mod.puzzles.length)}
             </div>
             <h1 className="font-display text-[30px] font-semibold leading-[1.08] text-parchment-ink md:text-[34px] lg:text-[38px]"
                 style={{ fontVariationSettings: "'opsz' 48, 'SOFT' 100", letterSpacing: '-0.015em' }}>
               {cleanTitle}
             </h1>
-            <div className="mt-5 h-px w-16 bg-copper" />
+            <div className="mt-5 h-px w-16 bg-bordeaux/80" />
 
             <div className="prose-editorial mt-8">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -113,7 +113,7 @@ export function PuzzleView() {
                         <div className="eyebrow mb-1 !text-copper/80">
                           Hint {toRoman(i + 1)}
                         </div>
-                        <p className="font-ital text-[15px] italic leading-relaxed text-parchment/85">
+                        <p className="text-[15px] italic leading-relaxed text-parchment/85">
                           {hint}
                         </p>
                       </div>
@@ -141,9 +141,12 @@ export function PuzzleView() {
               </button>
 
               {showSolution && (
-                <div className="mt-4 border border-wine-glow/50 bg-wine-deep/80 p-5">
-                  <div className="eyebrow mb-3 !text-bordeaux">Answer Key</div>
-                  <pre className="overflow-x-auto font-mono text-[12.5px] leading-relaxed text-parchment/90">
+                <div className="mt-4 border border-wine-glow/50 bg-wine-deep/80">
+                  <div className="flex items-center justify-between border-b border-wine-glow/40 px-5 py-2.5">
+                    <div className="eyebrow !text-bordeaux">Answer Key</div>
+                    <CopyButton text={puzzle.solution} />
+                  </div>
+                  <pre className="overflow-x-auto px-5 py-4 font-mono text-[12.5px] leading-relaxed text-parchment/90">
                     {puzzle.solution}
                   </pre>
                 </div>
@@ -179,7 +182,7 @@ export function PuzzleView() {
             <div className="flex items-baseline gap-3 font-display text-[15px] text-sage md:text-[16px]">
               <span className="font-ital italic text-[18px]">◆</span>
               <em className="italic">Quod erat demonstrandum.</em>
-              <span className="hidden text-parchment-dim sm:inline">The exercise is solved.</span>
+              <span className="hidden text-parchment-dim sm:inline">The puzzle is solved.</span>
             </div>
             {nextPuzzle ? (
               <button
@@ -188,7 +191,7 @@ export function PuzzleView() {
                 }
                 className="btn-primary !border-sage/40 !text-sage hover:!text-gold"
               >
-                Next Exercise →
+                Next Puzzle →
               </button>
             ) : (
               <button
@@ -202,5 +205,31 @@ export function PuzzleView() {
         </div>
       )}
     </div>
+  );
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard not available (e.g. insecure context) — silently ignore
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className={`flex items-center gap-1.5 font-sans text-[10.5px] uppercase tracking-caps transition-colors ${
+        copied ? 'text-sage' : 'text-parchment-mute hover:text-parchment'
+      }`}
+    >
+      {copied ? <Check size={11} /> : <Copy size={11} />}
+      {copied ? 'Copied' : 'Copy'}
+    </button>
   );
 }

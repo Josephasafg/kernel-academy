@@ -114,7 +114,10 @@ export function Sidebar() {
                                       }`}
                         >
                           {isDone && <Check size={10} className="shrink-0 text-sage" />}
-                          <span className="truncate">{puzzle.title.replace(/^Puzzle:\s*/, '')}</span>
+                          <span className="truncate">
+                            <span className={`mr-1.5 not-italic ${isActive ? 'text-bordeaux' : 'text-bordeaux/70'}`}>◆</span>
+                            {puzzle.title.replace(/^Puzzle:\s*/, '')}
+                          </span>
                         </button>
                       </li>
                     );

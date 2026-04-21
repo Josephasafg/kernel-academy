@@ -304,6 +304,77 @@ print("PASSED")`,
           'The only difference from vector add is using * instead of +',
         ],
       },
+      {
+        id: 'mod-1-puzzle-2',
+        title: 'Puzzle: Vector Subtract',
+        description: `## Vector Subtract
+
+Write a Triton kernel that subtracts one vector from another, element-wise:
+
+\`\`\`
+output[i] = x[i] - y[i]
+\`\`\`
+
+The skeleton is almost the vector-add kernel from Lesson 1. You need to:
+
+1. Get the program ID
+2. Compute block offsets
+3. Create a mask for safe boundary handling
+4. Load both input vectors
+5. **Subtract** \`y\` from \`x\`
+6. Store the result
+
+The test will compare your output against \`x - y\` computed in NumPy.`,
+        difficulty: 'easy',
+        starterCode: `import triton
+import triton.language as tl
+import numpy as np
+
+@triton.jit
+def sub_kernel(x_ptr, y_ptr, output_ptr, n_elements, BLOCK_SIZE: tl.constexpr):
+    # TODO: Implement element-wise subtraction (x - y)
+    # 1. Get program ID
+    # 2. Compute offsets
+    # 3. Create mask
+    # 4. Load x and y
+    # 5. Subtract and store
+    pass
+
+# --- Driver code (do not modify) ---
+n = 20
+np.random.seed(1)
+x = np.random.randn(n).astype(np.float32)
+y = np.random.randn(n).astype(np.float32)
+output = np.zeros(n, dtype=np.float32)
+
+grid = (triton.cdiv(n, 8),)
+sub_kernel[grid](x, y, output, n, BLOCK_SIZE=8)
+`,
+        solution: `import triton
+import triton.language as tl
+import numpy as np
+
+@triton.jit
+def sub_kernel(x_ptr, y_ptr, output_ptr, n_elements, BLOCK_SIZE: tl.constexpr):
+    pid = tl.program_id(axis=0)
+    offsets = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
+    mask = offsets < n_elements
+    x = tl.load(x_ptr + offsets, mask=mask)
+    y = tl.load(y_ptr + offsets, mask=mask)
+    tl.store(output_ptr + offsets, x - y, mask=mask)`,
+        testCode: `expected = x - y
+max_err = float(np.max(np.abs(output - expected)))
+assert np.allclose(output, expected, atol=1e-5), f"Wrong result! Max error: {max_err:.6f}"
+print(f"All {n} elements correct!")
+print(f"Sample: output[:5] = {output[:5]}")
+print(f"Expected:           {expected[:5]}")
+print("PASSED")`,
+        hints: [
+          'Copy the vector-multiply structure: pid, offsets, mask, load, store.',
+          'offsets = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE); mask = offsets < n_elements.',
+          'The only change from add is the operator: tl.store(output_ptr + offsets, x - y, mask=mask).',
+        ],
+      },
     ],
     quiz: {
       id: 'mod-1-quiz',
@@ -591,6 +662,80 @@ print("PASSED")`,
           'If the output position is i, where should you read from in the input?',
           'The reversed position for index i is: (n - 1 - i)',
           'Replace in_offsets = out_offsets with: in_offsets = (n - 1) - out_offsets',
+        ],
+      },
+      {
+        id: 'mod-2-puzzle-2',
+        title: 'Puzzle: Strided Copy',
+        description: `## Strided Copy
+
+Copy every *k*-th element of an input array into a compact output array:
+
+\`\`\`
+output[i] = input[i * stride]   for i in range(n_out)
+\`\`\`
+
+This is the pattern behind reading a column of a row-major matrix, or slicing \`x[::stride]\`. The read offsets are *strided* (multiply by \`stride\`), while the write offsets are contiguous.
+
+Steps:
+
+1. Compute contiguous **write** offsets: \`pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)\`
+2. Compute **read** offsets: the same values, multiplied by \`stride\`
+3. Mask against \`n_out\` so you don't read past the source or write past the destination
+4. Load from the strided positions, store to the contiguous positions`,
+        difficulty: 'easy',
+        starterCode: `import triton
+import triton.language as tl
+import numpy as np
+
+@triton.jit
+def strided_copy_kernel(src_ptr, dst_ptr, stride, n_out, BLOCK_SIZE: tl.constexpr):
+    pid = tl.program_id(0)
+    out_offsets = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
+    mask = out_offsets < n_out
+
+    # TODO: Compute the read offsets (every 'stride'-th element)
+    in_offsets = out_offsets  # FIX THIS
+
+    data = tl.load(src_ptr + in_offsets, mask=mask)
+    tl.store(dst_ptr + out_offsets, data, mask=mask)
+
+# --- Driver code ---
+src = np.arange(32, dtype=np.float32)
+stride = 3
+n_out = len(src) // stride   # 10
+output = np.zeros(n_out, dtype=np.float32)
+
+grid = (triton.cdiv(n_out, 8),)
+strided_copy_kernel[grid](src, output, stride, n_out, BLOCK_SIZE=8)
+
+print(f"Source:   {src}")
+print(f"Strided:  {output}")
+`,
+        solution: `import triton
+import triton.language as tl
+import numpy as np
+
+@triton.jit
+def strided_copy_kernel(src_ptr, dst_ptr, stride, n_out, BLOCK_SIZE: tl.constexpr):
+    pid = tl.program_id(0)
+    out_offsets = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
+    mask = out_offsets < n_out
+
+    in_offsets = out_offsets * stride
+
+    data = tl.load(src_ptr + in_offsets, mask=mask)
+    tl.store(dst_ptr + out_offsets, data, mask=mask)`,
+        testCode: `expected = src[::stride][:n_out]
+assert np.allclose(output, expected), f"Wrong! Got {output}, expected {expected}"
+print(f"Source:   {src}")
+print(f"Strided:  {output}")
+print(f"Expected: {expected}")
+print("PASSED")`,
+        hints: [
+          'The write offsets are contiguous; only the *read* offsets need to change.',
+          'Lesson 1 showed this pattern: multiply offsets by the stride.',
+          'Replace in_offsets = out_offsets with in_offsets = out_offsets * stride.',
         ],
       },
     ],
@@ -921,6 +1066,97 @@ print("PASSED")`,
           'GELU = 0.5 * x * (1.0 + tanh_result), then multiply by scale',
         ],
       },
+      {
+        id: 'mod-3-puzzle-2',
+        title: 'Puzzle: Fused GELU + Bias Add',
+        description: `## Fused GELU + Bias Add
+
+Write a kernel that computes, in one pass:
+
+\`\`\`
+output[i] = GELU(x[i] + bias[i])
+\`\`\`
+
+This is the fused pattern you'd see after a linear projection in a transformer MLP block. Two memory reads, one write, no intermediate buffer.
+
+Use the approximate GELU from Lesson 1:
+
+\`\`\`
+GELU(z) ≈ 0.5 * z * (1 + tanh(sqrt(2/pi) * (z + 0.044715 * z^3)))
+\`\`\`
+
+Constant: \`sqrt(2/pi) ≈ 0.7978845608\`. In the simulator, \`np.tanh\` works on the loaded block.
+
+Steps:
+
+1. Load \`x\` and \`bias\` with matching offsets and mask
+2. Compute \`z = x + bias\`
+3. Apply approximate GELU to \`z\`
+4. Store the result`,
+        difficulty: 'medium',
+        starterCode: `import triton
+import triton.language as tl
+import numpy as np
+
+@triton.jit
+def fused_gelu_bias_kernel(x_ptr, bias_ptr, output_ptr, n, BLOCK_SIZE: tl.constexpr):
+    pid = tl.program_id(0)
+    offsets = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
+    mask = offsets < n
+
+    x = tl.load(x_ptr + offsets, mask=mask)
+    bias = tl.load(bias_ptr + offsets, mask=mask)
+
+    # TODO: Compute GELU(x + bias)
+    # 1. z = x + bias
+    # 2. GELU(z) ≈ 0.5 * z * (1 + tanh(sqrt(2/pi) * (z + 0.044715 * z^3)))
+    result = x + bias  # FIX THIS
+
+    tl.store(output_ptr + offsets, result, mask=mask)
+
+# --- Driver code ---
+n = 24
+np.random.seed(3)
+x = np.random.randn(n).astype(np.float32)
+bias = np.random.randn(n).astype(np.float32) * 0.1
+output = np.zeros(n, dtype=np.float32)
+
+grid = (triton.cdiv(n, 8),)
+fused_gelu_bias_kernel[grid](x, bias, output, n, BLOCK_SIZE=8)
+`,
+        solution: `import triton
+import triton.language as tl
+import numpy as np
+
+@triton.jit
+def fused_gelu_bias_kernel(x_ptr, bias_ptr, output_ptr, n, BLOCK_SIZE: tl.constexpr):
+    pid = tl.program_id(0)
+    offsets = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
+    mask = offsets < n
+
+    x = tl.load(x_ptr + offsets, mask=mask)
+    bias = tl.load(bias_ptr + offsets, mask=mask)
+
+    z = x + bias
+    k = 0.7978845608  # sqrt(2/pi)
+    result = 0.5 * z * (1.0 + np.tanh(k * (z + 0.044715 * z * z * z)))
+
+    tl.store(output_ptr + offsets, result, mask=mask)`,
+        testCode: `k = 0.7978845608
+z = x + bias
+expected = 0.5 * z * (1.0 + np.tanh(k * (z + 0.044715 * z**3)))
+max_err = float(np.max(np.abs(output - expected)))
+assert max_err < 1e-4, f"Wrong! Max error: {max_err:.6f}"
+print(f"Max error: {max_err:.2e}")
+print(f"Sample output[:5]: {output[:5]}")
+print(f"Expected:          {expected[:5]}")
+print("PASSED")`,
+        hints: [
+          'First sum the two loads into z = x + bias, then apply GELU to z (not to x).',
+          'Copy the GELU formula from the Fused GELU + Scale puzzle, but pass z instead of x.',
+          'Remember np.tanh works on the block: tanh_in = 0.7978845608 * (z + 0.044715 * z * z * z); result = 0.5 * z * (1.0 + np.tanh(tanh_in)).',
+        ],
+      },
     ],
     quiz: {
       id: 'mod-3-quiz',
@@ -1244,6 +1480,81 @@ print("PASSED")`,
           'Mean: tl.sum(x, axis=0) / n_cols',
           'Variance: tl.sum((x - mean) * (x - mean), axis=0) / n_cols',
           'Normalize: (x - mean) / tl.sqrt(var + eps)',
+        ],
+      },
+      {
+        id: 'mod-4-puzzle-2',
+        title: 'Puzzle: Row-wise Max',
+        description: `## Row-wise Max
+
+For each row of a matrix, find its maximum value and write a single scalar out:
+
+\`\`\`
+row_max[r] = max(matrix[r, :])
+\`\`\`
+
+This is the first pass of a numerically-stable softmax. One program handles one row, just like the Block Reductions lesson.
+
+Steps:
+
+1. Use \`tl.program_id(0)\` to pick a row
+2. Load the row — remember: for a **max** reduction, masked-out slots must be \`float('-inf')\`, not \`0.0\`
+3. Reduce with \`tl.max(row, axis=0)\`
+4. Store the single scalar at \`row_max_ptr + row_idx\``,
+        difficulty: 'medium',
+        starterCode: `import triton
+import triton.language as tl
+import numpy as np
+
+@triton.jit
+def row_max_kernel(input_ptr, output_ptr, n_cols, BLOCK_SIZE: tl.constexpr):
+    row_idx = tl.program_id(0)
+    col_offsets = tl.arange(0, BLOCK_SIZE)
+    mask = col_offsets < n_cols
+    row_start = row_idx * n_cols
+
+    # TODO: Load the row with the correct 'other' for a max reduction,
+    # reduce with tl.max, and store one scalar per row.
+    pass
+
+# --- Driver code ---
+n_rows, n_cols = 4, 10
+np.random.seed(7)
+matrix = np.random.randn(n_rows, n_cols).astype(np.float32)
+row_max = np.zeros(n_rows, dtype=np.float32)
+
+row_max_kernel[(n_rows,)](matrix, row_max, n_cols, BLOCK_SIZE=16)
+
+print("Matrix:")
+print(matrix.round(3))
+print(f"\\nRow maxes: {row_max}")
+`,
+        solution: `import triton
+import triton.language as tl
+import numpy as np
+
+@triton.jit
+def row_max_kernel(input_ptr, output_ptr, n_cols, BLOCK_SIZE: tl.constexpr):
+    row_idx = tl.program_id(0)
+    col_offsets = tl.arange(0, BLOCK_SIZE)
+    mask = col_offsets < n_cols
+    row_start = row_idx * n_cols
+
+    row = tl.load(input_ptr + row_start + col_offsets,
+                  mask=mask, other=float('-inf'))
+    m = tl.max(row, axis=0)
+    tl.store(output_ptr + row_idx, m)`,
+        testCode: `expected = matrix.max(axis=1)
+max_err = float(np.max(np.abs(row_max - expected)))
+assert np.allclose(row_max, expected, atol=1e-5), f"Wrong! Got {row_max}, expected {expected}"
+print(f"Row maxes: {row_max}")
+print(f"Expected:  {expected}")
+print(f"Max error: {max_err:.2e}")
+print("PASSED")`,
+        hints: [
+          'Each program handles one row: row_idx = tl.program_id(0) and row_start = row_idx * n_cols.',
+          'For max, the masked "other" value must be float("-inf") so invalid lanes never win.',
+          'Reduce with m = tl.max(row, axis=0), then tl.store(output_ptr + row_idx, m) — a single scalar per row.',
         ],
       },
     ],
@@ -1580,6 +1891,99 @@ print("PASSED")`,
           'Load both vectors: a = tl.load(a_ptr + offsets, mask=mask, other=0.0)',
           'Element-wise multiply: products = a * b',
           'Reduce: dot = tl.sum(products, axis=0), then tl.store(output_ptr, dot)',
+        ],
+      },
+      {
+        id: 'mod-5-puzzle-2',
+        title: 'Puzzle: Outer Product',
+        description: `## Outer Product
+
+Given two 1D vectors \`a\` of length \`M\` and \`b\` of length \`N\`, write a kernel that produces the 2D outer product \`C\`:
+
+\`\`\`
+C[i, j] = a[i] * b[j]
+\`\`\`
+
+A single program can handle the whole output (assume \`M, N <= BLOCK_SIZE\`). This is your first real use of **broadcasting** with \`[:, None]\` and \`[None, :]\` — the same trick used for 2D offsets in Lesson 1.
+
+Steps:
+
+1. Load \`a\` as a 1D block of shape \`[BLOCK_M]\`, \`b\` as \`[BLOCK_N]\`, both with 1D masks
+2. Broadcast-multiply: \`a[:, None] * b[None, :]\` produces a \`[BLOCK_M, BLOCK_N]\` block
+3. Build 2D offsets \`row_offs[:, None] * N + col_offs[None, :]\` into the \`M*N\` output
+4. Build a 2D mask \`(row_offs[:, None] < M) & (col_offs[None, :] < N)\`
+5. Store the block`,
+        difficulty: 'medium',
+        starterCode: `import triton
+import triton.language as tl
+import numpy as np
+
+@triton.jit
+def outer_product_kernel(
+    a_ptr, b_ptr, c_ptr, M, N,
+    BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr,
+):
+    row_offs = tl.arange(0, BLOCK_M)
+    col_offs = tl.arange(0, BLOCK_N)
+    row_mask = row_offs < M
+    col_mask = col_offs < N
+
+    a = tl.load(a_ptr + row_offs, mask=row_mask, other=0.0)
+    b = tl.load(b_ptr + col_offs, mask=col_mask, other=0.0)
+
+    # TODO:
+    # 1. Broadcast: out = a[:, None] * b[None, :]
+    # 2. Compute 2D output offsets into a row-major (M x N) buffer
+    # 3. Build a 2D mask and store
+    pass
+
+# --- Driver code ---
+M, N = 6, 5
+np.random.seed(11)
+a = np.random.randn(M).astype(np.float32)
+b = np.random.randn(N).astype(np.float32)
+C = np.zeros((M, N), dtype=np.float32)
+
+outer_product_kernel[(1,)](a, b, C, M, N, BLOCK_M=8, BLOCK_N=8)
+
+print(f"a = {a.round(3)}")
+print(f"b = {b.round(3)}")
+print("C =")
+print(C.round(3))
+`,
+        solution: `import triton
+import triton.language as tl
+import numpy as np
+
+@triton.jit
+def outer_product_kernel(
+    a_ptr, b_ptr, c_ptr, M, N,
+    BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr,
+):
+    row_offs = tl.arange(0, BLOCK_M)
+    col_offs = tl.arange(0, BLOCK_N)
+    row_mask = row_offs < M
+    col_mask = col_offs < N
+
+    a = tl.load(a_ptr + row_offs, mask=row_mask, other=0.0)
+    b = tl.load(b_ptr + col_offs, mask=col_mask, other=0.0)
+
+    out = a[:, None] * b[None, :]
+
+    c_offsets = row_offs[:, None] * N + col_offs[None, :]
+    c_mask = (row_offs[:, None] < M) & (col_offs[None, :] < N)
+    tl.store(c_ptr + c_offsets, out, mask=c_mask)`,
+        testCode: `expected = np.outer(a, b)
+max_err = float(np.max(np.abs(C - expected)))
+assert np.allclose(C, expected, atol=1e-5), f"Wrong! Max error {max_err:.6f}"
+print("Expected:")
+print(expected.round(3))
+print(f"\\nMax error: {max_err:.2e}")
+print("PASSED")`,
+        hints: [
+          'Load a and b as 1D blocks first; their broadcast product a[:, None] * b[None, :] has shape [BLOCK_M, BLOCK_N].',
+          'For a row-major (M x N) output, the offset for element [i, j] is row_offs[:, None] * N + col_offs[None, :].',
+          'Build the 2D mask with & so both row and column bounds are respected: (row_offs[:, None] < M) & (col_offs[None, :] < N).',
         ],
       },
     ],
@@ -2489,6 +2893,128 @@ print("PASSED")`,
           'Extract the 4-bit value: w = (packed >> (bit * 4)) & 0xF',
           'Output position: out_col = offs * 8 + bit. Group: group_idx = out_col // group_size',
           'Dequantize: result = (w.astype(np.float32) - zero) * scale, then tl.store to output_ptr + out_col',
+        ],
+      },
+      {
+        id: 'mod-7-puzzle-2',
+        title: 'Puzzle: 4-bit Quantize',
+        description: `## 4-bit Quantize
+
+This is the inverse of the dequantize puzzle. You're given a float32 vector plus per-group \`scales\` and \`zeros\`, and you must **pack** 8 quantized nibbles into each int32.
+
+For each group of \`group_size\` contiguous values:
+
+\`\`\`
+q = clip(round(x / scale + zero), 0, 15)    # a 4-bit integer
+\`\`\`
+
+Then, for each packed output slot covering 8 consecutive quantized values, OR the nibbles into place:
+
+\`\`\`
+packed[i] = q[8i+0] | (q[8i+1] << 4) | (q[8i+2] << 8) | ... | (q[8i+7] << 28)
+\`\`\`
+
+Each program handles one packed int32 (8 input floats). Loop over \`bit in range(8)\`, load one scalar at a time, quantize it, shift it into the accumulator.
+
+Assume \`group_size\` is a multiple of 8 so every packed slot lives inside a single group.`,
+        difficulty: 'hard',
+        starterCode: `import triton
+import triton.language as tl
+import numpy as np
+
+@triton.jit
+def quant_kernel(x_ptr, scales_ptr, zeros_ptr, packed_ptr,
+                  num_packed, group_size, BLOCK_SIZE: tl.constexpr):
+    pid = tl.program_id(0)
+    offs = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
+    mask = offs < num_packed
+
+    # Per-packed-slot group index (group_size is a multiple of 8)
+    group_idx = (offs * 8) // group_size
+    scale = tl.load(scales_ptr + group_idx, mask=mask, other=1.0)
+    zero = tl.load(zeros_ptr + group_idx, mask=mask, other=0.0)
+
+    acc = tl.zeros((BLOCK_SIZE,), dtype=tl.int32)
+
+    # TODO: for bit in range(8):
+    #   1. Load x at position offs * 8 + bit
+    #   2. Quantize: q = clip(round(x / scale + zero), 0, 15), as int32
+    #   3. OR into acc:  acc = acc | (q << (bit * 4))
+    for bit in range(8):
+        pass
+
+    tl.store(packed_ptr + offs, acc, mask=mask)
+
+# --- Driver code (do not modify) ---
+np.random.seed(0)
+num_values = 16
+group_size = 8
+x = np.random.randn(num_values).astype(np.float32) * 0.5
+
+# Per-group scale / zero so quantization is well-defined
+num_groups = num_values // group_size
+scales = np.zeros(num_groups, dtype=np.float32)
+zeros = np.zeros(num_groups, dtype=np.float32)
+for g in range(num_groups):
+    sl = slice(g * group_size, (g + 1) * group_size)
+    vmin, vmax = float(x[sl].min()), float(x[sl].max())
+    scales[g] = max((vmax - vmin) / 15.0, 1e-6)
+    zeros[g] = -vmin / scales[g]
+
+num_packed = num_values // 8
+packed = np.zeros(num_packed, dtype=np.int32)
+quant_kernel[(triton.cdiv(num_packed, 4),)](
+    x, scales, zeros, packed, num_packed, group_size, BLOCK_SIZE=4,
+)
+`,
+        solution: `import triton
+import triton.language as tl
+import numpy as np
+
+@triton.jit
+def quant_kernel(x_ptr, scales_ptr, zeros_ptr, packed_ptr,
+                  num_packed, group_size, BLOCK_SIZE: tl.constexpr):
+    pid = tl.program_id(0)
+    offs = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
+    mask = offs < num_packed
+
+    group_idx = (offs * 8) // group_size
+    scale = tl.load(scales_ptr + group_idx, mask=mask, other=1.0)
+    zero = tl.load(zeros_ptr + group_idx, mask=mask, other=0.0)
+
+    acc = tl.zeros((BLOCK_SIZE,), dtype=tl.int32)
+
+    for bit in range(8):
+        x_val = tl.load(x_ptr + offs * 8 + bit, mask=mask, other=0.0)
+        q_float = np.round(x_val / scale + zero)
+        q_clipped = tl.minimum(tl.maximum(q_float, 0.0), 15.0)
+        q = q_clipped.astype(np.int32)
+        acc = acc | (q << (bit * 4))
+
+    tl.store(packed_ptr + offs, acc, mask=mask)`,
+        testCode: `# Expected packing, computed in numpy
+expected_q = np.zeros(num_values, dtype=np.int32)
+for i in range(num_values):
+    g = i // group_size
+    expected_q[i] = int(np.clip(np.round(x[i] / scales[g] + zeros[g]), 0, 15))
+
+expected_packed = np.zeros(num_packed, dtype=np.int32)
+for i in range(num_packed):
+    for b in range(8):
+        expected_packed[i] |= int(expected_q[i * 8 + b]) << (b * 4)
+
+assert np.array_equal(packed, expected_packed), (
+    f"Wrong packing!\\n got:      {packed}\\n expected: {expected_packed}"
+)
+print(f"Input (first 8):     {x[:8].round(3)}")
+print(f"Quantized (first 8): {expected_q[:8]}")
+print(f"Packed:              {packed}")
+print(f"Expected:            {expected_packed}")
+print("PASSED")`,
+        hints: [
+          'Use the exact same group indexing as the dequant puzzle, just inverted: the group of packed slot i covers x[i*8 : i*8 + 8].',
+          'Per bit: load one scalar x_val at position offs * 8 + bit, compute np.round(x_val / scale + zero), clip to [0, 15] with tl.maximum/tl.minimum, then cast with .astype(np.int32).',
+          'Accumulate with bitwise OR and a left shift: acc = acc | (q << (bit * 4)); store acc once at the end.',
         ],
       },
     ],

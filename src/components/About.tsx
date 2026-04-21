@@ -30,7 +30,7 @@ export function About() {
           <span className="text-copper">?</span>
         </h1>
 
-        <p className="mt-6 font-ital text-[18px] italic leading-snug text-parchment-dim md:text-[22px]">
+        <p className="mt-6 text-[18px] italic leading-snug text-parchment-dim md:text-[22px]">
           A short note from the person who wrote this field guide.
         </p>
 

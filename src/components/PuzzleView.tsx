@@ -53,7 +53,7 @@ export function PuzzleView() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-white/[0.04] bg-surface/40 px-6 py-3">
+      <header className="flex items-center justify-between border-b border-white/[0.04] bg-surface/40 px-8 py-3.5">
         <div className="flex items-center gap-2 text-sm">
           <button
             onClick={() => navigate('/')}
@@ -82,13 +82,13 @@ export function PuzzleView() {
       {/* Content */}
       <div className="flex flex-1 min-h-0">
         {/* Left: Description + Hints */}
-        <div className="w-2/5 overflow-y-auto border-r border-white/[0.04] p-8">
-          <div className="mx-auto max-w-lg">
-            <h1 className="mb-4 text-xl font-bold text-white">
+        <div className="w-[42%] overflow-y-auto border-r border-white/[0.04]">
+          <div className="mx-auto max-w-[520px] px-10 py-12">
+            <h1 className="mb-5 text-2xl font-bold tracking-tight text-white">
               {puzzle.title}
             </h1>
 
-            <div className="lesson-content mb-6">
+            <div className="lesson-content mb-8">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {puzzle.description}
               </ReactMarkdown>
@@ -149,8 +149,9 @@ export function PuzzleView() {
         </div>
 
         {/* Right: Code editor */}
-        <div className="w-3/5 p-4">
+        <div className="w-[58%] p-5">
           <CodePlayground
+            key={puzzle.id}
             initialCode={puzzle.starterCode}
             storageKey={puzzle.id}
             testCode={puzzle.testCode}

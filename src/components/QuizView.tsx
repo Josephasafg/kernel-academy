@@ -60,7 +60,7 @@ export function QuizView() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-white/[0.04] bg-surface/40 px-6 py-3">
+      <header className="flex items-center justify-between border-b border-white/[0.04] bg-surface/40 px-8 py-3.5">
         <div className="flex items-center gap-2 text-sm">
           <button
             onClick={() => navigate('/')}
@@ -82,16 +82,16 @@ export function QuizView() {
       </header>
 
       {/* Questions */}
-      <div className="flex-1 overflow-y-auto p-8">
-        <div className="mx-auto max-w-2xl">
-          <h1 className="mb-2 text-2xl font-bold text-white">
+      <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-[640px] px-10 py-12">
+          <h1 className="mb-2 text-3xl font-bold tracking-tight text-white">
             {mod.title} Quiz
           </h1>
-          <p className="mb-8 text-sm text-slate-500">
+          <p className="mb-10 text-sm text-slate-500">
             {quiz.questions.length} questions &middot; Test your understanding
           </p>
 
-          <div className="space-y-6">
+          <div className="space-y-8">
             {quiz.questions.map((q, qi) => {
               const selected = answers[q.id];
               const isCorrect = submitted && selected === q.correctIndex;
@@ -103,7 +103,7 @@ export function QuizView() {
               return (
                 <div
                   key={q.id}
-                  className={`rounded-xl border p-5 transition-all ${
+                  className={`rounded-xl border p-6 transition-all ${
                     submitted
                       ? isCorrect
                         ? 'border-emerald-500/20 bg-emerald-500/[0.03]'
@@ -113,12 +113,12 @@ export function QuizView() {
                       : 'border-white/[0.06] bg-surface/40'
                   }`}
                 >
-                  <p className="mb-4 text-sm font-medium text-white">
+                  <p className="mb-5 text-[15px] font-medium leading-relaxed text-white">
                     <span className="mr-2 text-slate-600">{qi + 1}.</span>
                     {q.question}
                   </p>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {q.options.map((opt, oi) => {
                       const isSelected = selected === oi;
                       const isAnswer = q.correctIndex === oi;
@@ -170,7 +170,7 @@ export function QuizView() {
 
                   {/* Explanation */}
                   {submitted && (
-                    <div className="mt-3 rounded-lg bg-white/[0.02] p-3 text-xs text-slate-400">
+                    <div className="mt-4 rounded-lg bg-white/[0.02] p-4 text-[13px] leading-relaxed text-slate-400">
                       <strong className="text-slate-300">Explanation:</strong>{' '}
                       {q.explanation}
                     </div>

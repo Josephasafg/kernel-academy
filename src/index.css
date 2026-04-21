@@ -90,35 +90,41 @@
     @apply badge bg-rose-500/10 text-rose-400;
   }
 
+  .lesson-content {
+    @apply text-[15px] leading-[1.8];
+  }
   .lesson-content h1 {
-    @apply mb-4 text-2xl font-bold text-white;
+    @apply mb-5 mt-10 text-2xl font-bold tracking-tight text-white first:mt-0;
   }
   .lesson-content h2 {
-    @apply mb-3 mt-6 text-xl font-semibold text-white;
+    @apply mb-4 mt-10 text-xl font-semibold tracking-tight text-white;
   }
   .lesson-content h3 {
-    @apply mb-2 mt-4 text-lg font-medium text-slate-100;
+    @apply mb-3 mt-8 text-lg font-medium text-slate-100;
   }
   .lesson-content p {
-    @apply mb-4 leading-relaxed text-slate-300;
+    @apply mb-5 text-slate-300/90;
   }
   .lesson-content ul {
-    @apply mb-4 list-disc space-y-1 pl-6 text-slate-300;
+    @apply mb-6 list-disc space-y-2 pl-6 text-slate-300/90;
   }
   .lesson-content ol {
-    @apply mb-4 list-decimal space-y-1 pl-6 text-slate-300;
+    @apply mb-6 list-decimal space-y-2 pl-6 text-slate-300/90;
+  }
+  .lesson-content li {
+    @apply pl-1;
   }
   .lesson-content code {
-    @apply rounded bg-surface-lighter px-1.5 py-0.5 font-mono text-sm text-accent-cyan;
+    @apply rounded-md bg-surface-lighter/80 px-1.5 py-0.5 font-mono text-[13px] text-accent-cyan;
   }
   .lesson-content pre {
-    @apply mb-4 overflow-x-auto rounded-lg border border-white/5 bg-[#0a0e1a] p-4;
+    @apply my-6 overflow-x-auto rounded-xl border border-white/[0.06] bg-[#080c18] p-5;
   }
   .lesson-content pre code {
-    @apply bg-transparent p-0 text-slate-300;
+    @apply bg-transparent p-0 text-[13px] leading-relaxed text-slate-300;
   }
   .lesson-content blockquote {
-    @apply mb-4 border-l-2 border-accent-cyan/30 pl-4 italic text-slate-400;
+    @apply my-6 rounded-r-lg border-l-2 border-accent-cyan/30 bg-accent-cyan/[0.03] py-3 pl-5 pr-4 text-slate-400;
   }
   .lesson-content strong {
     @apply font-semibold text-white;
@@ -128,7 +134,16 @@
            transition-colors hover:text-neon-cyan hover:decoration-neon-cyan/50;
   }
   .lesson-content hr {
-    @apply my-6 border-white/5;
+    @apply my-8 border-white/[0.06];
+  }
+  .lesson-content table {
+    @apply my-6 w-full text-sm;
+  }
+  .lesson-content th {
+    @apply border-b border-white/[0.08] pb-2.5 text-left font-medium text-slate-300;
+  }
+  .lesson-content td {
+    @apply border-b border-white/[0.04] py-2.5 text-slate-400;
   }
 }
 

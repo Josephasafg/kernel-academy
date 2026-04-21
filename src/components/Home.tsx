@@ -36,7 +36,7 @@ export function Home() {
   return (
     <div className="min-h-screen">
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-white/[0.04] px-6 py-20">
+      <section className="relative overflow-hidden border-b border-white/[0.04] px-8 py-28">
         {/* Background effects */}
         <div className="bg-grid-pattern absolute inset-0" />
         <div
@@ -55,12 +55,12 @@ export function Home() {
             </span>
           </div>
 
-          <h1 className="mb-4 text-5xl font-extrabold tracking-tight sm:text-6xl">
+          <h1 className="mb-5 text-5xl font-extrabold tracking-tight sm:text-7xl">
             <span className="text-white">Master </span>
             <span className="text-gradient">Triton</span>
           </h1>
 
-          <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-slate-400">
+          <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-slate-400">
             Learn GPU kernel programming from zero to expert. Write real Triton
             code, solve puzzles, and run everything directly in your browser
             &mdash; no GPU required.
@@ -108,8 +108,8 @@ export function Home() {
       </section>
 
       {/* Module Grid */}
-      <section className="mx-auto max-w-6xl px-6 py-16">
-        <div className="mb-10 flex items-end justify-between">
+      <section className="mx-auto max-w-6xl px-8 py-20">
+        <div className="mb-12 flex items-end justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white">Curriculum</h2>
             <p className="mt-1 text-sm text-slate-500">
@@ -119,7 +119,7 @@ export function Home() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {curriculum.map((mod) => {
             const totalItems =
               mod.lessons.length + mod.puzzles.length + 1;
@@ -135,7 +135,7 @@ export function Home() {
                     `/module/${mod.id}/lesson/${mod.lessons[0]?.id}`,
                   )
                 }
-                className="glass-card-hover group relative p-6 text-left"
+                className="glass-card-hover group relative p-7 text-left"
               >
                 {/* Module number */}
                 <div className="mb-4 flex items-start justify-between">

@@ -43,7 +43,7 @@ export function LessonView() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-white/[0.04] bg-surface/40 px-6 py-3">
+      <header className="flex items-center justify-between border-b border-white/[0.04] bg-surface/40 px-8 py-3.5">
         <div className="flex items-center gap-2 text-sm">
           <button
             onClick={() => navigate('/')}
@@ -76,13 +76,13 @@ export function LessonView() {
       {/* Content */}
       <div className="flex flex-1 min-h-0">
         {/* Lesson text */}
-        <div className="w-1/2 overflow-y-auto border-r border-white/[0.04] p-8">
-          <div className="mx-auto max-w-2xl">
-            <div className="mb-6">
-              <span className="badge-beginner mb-2 inline-block text-[10px]">
+        <div className="w-[55%] overflow-y-auto border-r border-white/[0.04]">
+          <div className="mx-auto max-w-[640px] px-10 py-12">
+            <div className="mb-8">
+              <span className="badge-beginner mb-3 inline-block text-[10px]">
                 Lesson {lessonIdx + 1} of {mod.lessons.length}
               </span>
-              <h1 className="text-2xl font-bold text-white">{lesson.title}</h1>
+              <h1 className="text-3xl font-bold tracking-tight text-white">{lesson.title}</h1>
             </div>
 
             <div className="lesson-content">
@@ -94,13 +94,13 @@ export function LessonView() {
         </div>
 
         {/* Code playground */}
-        <div className="w-1/2 p-4">
-          <CodePlayground initialCode={lesson.code} storageKey={lesson.id} readOnly={false} />
+        <div className="w-[45%] p-5">
+          <CodePlayground key={lesson.id} initialCode={lesson.code} storageKey={lesson.id} readOnly={false} />
         </div>
       </div>
 
       {/* Navigation footer */}
-      <footer className="flex items-center justify-between border-t border-white/[0.04] bg-surface/40 px-6 py-3">
+      <footer className="flex items-center justify-between border-t border-white/[0.04] bg-surface/40 px-8 py-3.5">
         {prev ? (
           <button
             onClick={() => navigate(`/module/${mod.id}/lesson/${prev.id}`)}

@@ -33,20 +33,18 @@ export function CodePlayground({
   const { getCodeEdit, setCodeEdit, clearCodeEdit } = useProgress();
   const savedCode = storageKey ? getCodeEdit(storageKey) : undefined;
 
-  const [code, setCode] = useState(savedCode ?? initialCode);
   const [output, setOutput] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'running' | 'success' | 'error'>('idle');
   const [loadingMsg, setLoadingMsg] = useState('');
-  const editorRef = useRef<unknown>(null);
+  const editorRef = useRef<{ getValue: () => string; setValue: (v: string) => void } | null>(null);
 
-  const handleEditorMount = useCallback((editor: unknown) => {
+  const handleEditorMount = useCallback((editor: { getValue: () => string; setValue: (v: string) => void }) => {
     editorRef.current = editor;
   }, []);
 
   const handleCodeChange = useCallback(
     (value: string | undefined) => {
       const v = value ?? '';
-      setCode(v);
       if (storageKey) setCodeEdit(storageKey, v);
       onCodeChange?.(v);
     },
@@ -55,6 +53,8 @@ export function CodePlayground({
 
   const handleRun = useCallback(async () => {
     if (status === 'loading' || status === 'running') return;
+
+    const code = editorRef.current?.getValue() ?? '';
 
     setStatus(isPyodideReady() ? 'running' : 'loading');
     setOutput('');
@@ -78,10 +78,10 @@ export function CodePlayground({
         onSuccess?.();
       }
     }
-  }, [code, testCode, status, onSuccess]);
+  }, [testCode, status, onSuccess]);
 
   const handleReset = useCallback(() => {
-    setCode(initialCode);
+    editorRef.current?.setValue(initialCode);
     if (storageKey) clearCodeEdit(storageKey);
     setOutput('');
     setStatus('idle');
@@ -133,7 +133,7 @@ export function CodePlayground({
           height={height === '100%' ? '100%' : height}
           language="python"
           theme="vs-dark"
-          value={code}
+          defaultValue={savedCode ?? initialCode}
           onChange={handleCodeChange}
           onMount={handleEditorMount}
           options={{

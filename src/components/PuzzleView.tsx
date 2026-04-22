@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useState, useCallback } from 'react';
 import { Check, Copy } from 'lucide-react';
+import { CopyLinkButton } from './CopyLinkButton';
 
 export function PuzzleView() {
   const { moduleId, puzzleId } = useParams();
@@ -65,7 +66,8 @@ export function PuzzleView() {
           </span>
         </div>
 
-        <div className="flex shrink-0 items-center gap-3">
+        <div className="flex shrink-0 items-center gap-4">
+          <CopyLinkButton />
           <span className={`diff-pill ${diffTint[puzzle.difficulty]}`}>
             {puzzle.difficulty}
           </span>
@@ -149,6 +151,14 @@ export function PuzzleView() {
                   <pre className="overflow-x-auto px-5 py-4 font-mono text-[12.5px] leading-relaxed text-parchment/90">
                     {puzzle.solution}
                   </pre>
+                  {puzzle.commentary && (
+                    <div className="border-t border-wine-glow/40 px-5 py-4">
+                      <div className="eyebrow !text-bordeaux mb-2">Commentary</div>
+                      <p className="font-display text-[14.5px] leading-relaxed text-parchment/80">
+                        {puzzle.commentary}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

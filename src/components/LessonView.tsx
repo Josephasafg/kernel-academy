@@ -6,6 +6,7 @@ import { toRoman } from '../utils/roman';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Check } from 'lucide-react';
+import { CopyLinkButton } from './CopyLinkButton';
 
 export function LessonView() {
   const { moduleId, lessonId } = useParams();
@@ -50,18 +51,21 @@ export function LessonView() {
           </span>
         </div>
 
-        <button
-          onClick={() => completeLesson(lesson.id)}
-          className={`shrink-0 ${completed ? 'btn-secondary !border-sage/40 !text-sage' : 'btn-secondary'}`}
-        >
-          {completed ? (
-            <>
-              <Check size={12} /> Read
-            </>
-          ) : (
-            <>Mark read</>
-          )}
-        </button>
+        <div className="flex shrink-0 items-center gap-4">
+          <CopyLinkButton />
+          <button
+            onClick={() => completeLesson(lesson.id)}
+            className={completed ? 'btn-secondary !border-sage/40 !text-sage' : 'btn-secondary'}
+          >
+            {completed ? (
+              <>
+                <Check size={12} /> Read
+              </>
+            ) : (
+              <>Mark read</>
+            )}
+          </button>
+        </div>
       </header>
 
       {/* Two-column reading spread */}

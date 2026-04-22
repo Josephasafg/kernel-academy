@@ -380,6 +380,8 @@ print("PASSED")`,
           'Compute offsets as: pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)',
           'The only difference from vector add is using * instead of +',
         ],
+        commentary:
+          'Element-wise operations map perfectly to the block model: each program operates on its own slice of memory with no cross-program dependencies. Swapping + for * changes only the inner math; the whole scaffold — grid, offsets, mask, load, store — stays identical. This is why Triton’s "think in blocks" abstraction pays off almost immediately.',
       },
       {
         id: 'mod-1-puzzle-2',
@@ -451,6 +453,8 @@ print("PASSED")`,
           'offsets = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE); mask = offsets < n_elements.',
           'The only change from add is the operator: tl.store(output_ptr + offsets, x - y, mask=mask).',
         ],
+        commentary:
+          'As with add and multiply, subtraction is a pure, local op — the shape of the kernel is entirely about indexing, not arithmetic. Notice the same five-line structure now covers three different kernels; once you have the scaffold, each new element-wise operation costs you one expression.',
       },
     ],
     quiz: {
@@ -740,6 +744,8 @@ print("PASSED")`,
           'The reversed position for index i is: (n - 1 - i)',
           'Replace in_offsets = out_offsets with: in_offsets = (n - 1) - out_offsets',
         ],
+        commentary:
+          'The writes stay contiguous but the reads now walk backwards through memory. On real hardware this asymmetry matters: coalesced writes stay fast while non-sequential reads cost more bandwidth. Triton lets you express the pattern declaratively — the compiler handles the actual memory traffic.',
       },
       {
         id: 'mod-2-puzzle-2',
@@ -814,6 +820,8 @@ print("PASSED")`,
           'Tutorial 1 showed this pattern: multiply offsets by the stride.',
           'Replace in_offsets = out_offsets with in_offsets = out_offsets * stride.',
         ],
+        commentary:
+          'Multiplying offsets by `stride` turns a contiguous write pattern into a strided read. Every time you slice a column out of a row-major matrix, or pull every N-th element of a tensor, this is the same primitive. Keep writes contiguous whenever you can — they’re the cheaper half of most kernels.',
       },
     ],
     quiz: {
@@ -1142,6 +1150,8 @@ print("PASSED")`,
           'Multiply by sqrt(2/pi) ≈ 0.7978845608 and apply np.tanh',
           'GELU = 0.5 * x * (1.0 + tanh_result), then multiply by scale',
         ],
+        commentary:
+          'GELU is itself a chain of five or six element-wise ops. Without fusion, each would be its own kernel launch with a full memory round-trip. By computing the whole function plus the scale in one program, we load the input once, keep everything in registers, and write once — roughly a 6× reduction in memory traffic over the naive pipeline.',
       },
       {
         id: 'mod-3-puzzle-2',
@@ -1233,6 +1243,8 @@ print("PASSED")`,
           'Copy the GELU formula from the Fused GELU + Scale puzzle, but pass z instead of x.',
           'Remember np.tanh works on the block: tanh_in = 0.7978845608 * (z + 0.044715 * z * z * z); result = 0.5 * z * (1.0 + np.tanh(tanh_in)).',
         ],
+        commentary:
+          'Same fusion principle, now with two input tensors. The bias is loaded once per element, the sum stays in registers, GELU runs on the sum, the result is stored. As three separate PyTorch ops, you would materialize the intermediate `x + bias` to memory twice; here it never leaves the kernel. This is the pattern behind most "linear + activation" fused ops in production inference stacks.',
       },
     ],
     quiz: {
@@ -1558,6 +1570,8 @@ print("PASSED")`,
           'Variance: tl.sum((x - mean) * (x - mean), axis=0) / n_cols',
           'Normalize: (x - mean) / tl.sqrt(var + eps)',
         ],
+        commentary:
+          'Layer norm is three reductions back-to-back: mean, variance, then the normalize. Because each row is independent, we assign one program per row, load the row once, and run the whole chain in registers. This is exactly what LayerNorm kernels in modern transformer stacks do — minus the learnable gamma/beta, which just add two more multiplies at the end.',
       },
       {
         id: 'mod-4-puzzle-2',
@@ -1633,6 +1647,8 @@ print("PASSED")`,
           'For max, the masked "other" value must be float("-inf") so invalid lanes never win.',
           'Reduce with m = tl.max(row, axis=0), then tl.store(output_ptr + row_idx, m) — a single scalar per row.',
         ],
+        commentary:
+          'The trick is the masked `other` value. A maximum must never lose to an invalid lane, so padded slots have to be `-inf` — anything else (including `0.0`) would silently corrupt the result when the real data is all negative. This same pattern shows up at the start of every numerically-stable softmax, including the online version in Module 6.',
       },
     ],
     quiz: {
@@ -1969,6 +1985,8 @@ print("PASSED")`,
           'Element-wise multiply: products = a * b',
           'Reduce: dot = tl.sum(products, axis=0), then tl.store(output_ptr, dot)',
         ],
+        commentary:
+          'A dot product is a reduction of element-wise products, and Triton fuses the two naturally: `tl.sum(a * b)` compiles to a hardware reduction tree that computes partial sums in parallel. This same structure scales up to matmul — each output cell of a matrix product is just a dot product of one row with one column.',
       },
       {
         id: 'mod-5-puzzle-2',
@@ -2062,6 +2080,8 @@ print("PASSED")`,
           'For a row-major (M x N) output, the offset for element [i, j] is row_offs[:, None] * N + col_offs[None, :].',
           'Build the 2D mask with & so both row and column bounds are respected: (row_offs[:, None] < M) & (col_offs[None, :] < N).',
         ],
+        commentary:
+          'Broadcasting with `[:, None]` and `[None, :]` is how Triton expresses 2D block computation without explicit loops. The compiler unrolls the broadcast into a `[BLOCK_M, BLOCK_N]` tile of parallel ops. This is the same mechanism used to build 2D offsets for matmul — once you have it, 2D kernels feel almost as natural as 1D.',
       },
     ],
     quiz: {
@@ -2505,6 +2525,8 @@ print("PASSED")`,
           'Then apply standard numerically stable softmax: x_max = tl.max(x, axis=0)',
           'Full sequence: x/temp -> max -> exp(x-max) -> sum -> divide',
         ],
+        commentary:
+          'Temperature is just a scalar division before softmax — normally that would be its own kernel. Folding it into the same pass saves a full load and store. The rest is standard: subtract max for numerical stability, exponentiate, normalize by the sum. Temperature < 1 sharpens the distribution, > 1 flattens it, and the kernel doesn’t care either way.',
       },
       {
         id: 'mod-6-puzzle-2',
@@ -2591,6 +2613,8 @@ print("PASSED")`,
           'Compute mean: tl.sum(h, axis=0) / n_cols',
           'Variance: tl.sum((h - mean)^2, axis=0) / n_cols. Normalize: (h - mean) / tl.sqrt(var + eps)',
         ],
+        commentary:
+          'In a transformer block, residual connections feed directly into layer norm. A naive implementation would materialize `x + residual` to memory, then read it back in for the norm — a pointless round-trip for hundreds of bytes per token. Fusing removes it entirely. This exact "add + norm" pattern is one of the most common fused kernels in production LLM inference.',
       },
     ],
     quiz: {
@@ -2971,6 +2995,8 @@ print("PASSED")`,
           'Output position: out_col = offs * 8 + bit. Group: group_idx = out_col // group_size',
           'Dequantize: result = (w.astype(np.float32) - zero) * scale, then tl.store to output_ptr + out_col',
         ],
+        commentary:
+          'The packing format is simple: eight nibbles per int32, extracted with shift-and-mask. Group-wise scale and zero mean each group of weights shares a small bit of metadata — not one scale per weight (too wasteful), not one scale per tensor (too coarse), but a tunable middle ground that preserves most of the accuracy at a fraction of the storage. AWQ, GPTQ, and bitsandbytes all rest on this pattern.',
       },
       {
         id: 'mod-7-puzzle-2',
@@ -3093,6 +3119,8 @@ print("PASSED")`,
           'Per bit: load one scalar x_val at position offs * 8 + bit, compute np.round(x_val / scale + zero), clip to [0, 15] with tl.maximum/tl.minimum, then cast with .astype(np.int32).',
           'Accumulate with bitwise OR and a left shift: acc = acc | (q << (bit * 4)); store acc once at the end.',
         ],
+        commentary:
+          'The inverse direction: accumulate quantized nibbles into a single int32 with OR-and-shift rather than ever materializing an intermediate unpacked array. One 32-bit register holds eight 4-bit values as you loop — which is why bit-packed formats are so memory-efficient: the data structure itself is the payload, not a decoded version of it.',
       },
     ],
     quiz: {

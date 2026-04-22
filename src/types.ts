@@ -16,6 +16,7 @@ export interface Puzzle {
   solution: string;
   testCode: string;
   hints: string[];
+  commentary?: string;
 }
 
 export interface QuizQuestion {

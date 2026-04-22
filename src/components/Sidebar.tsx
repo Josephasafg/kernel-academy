@@ -148,6 +148,24 @@ export function Sidebar() {
               </li>
             );
           })}
+
+          {/* Forthcoming entry — no link */}
+          <li className="opacity-60">
+            <div className="mb-1 flex items-baseline gap-3">
+              <span className="font-display text-[11px] font-medium tracking-widest-caps text-bordeaux/70">
+                ◆
+              </span>
+              <div className="min-w-0">
+                <div className="font-display text-[14.5px] font-semibold leading-tight text-parchment/80"
+                     style={{ fontVariationSettings: "'opsz' 18, 'SOFT' 60" }}>
+                  Fix the Bug
+                </div>
+                <div className="mt-0.5 font-sans text-[9.5px] uppercase tracking-widest-caps text-bordeaux/70">
+                  Coming Soon
+                </div>
+              </div>
+            </div>
+          </li>
         </ol>
       </nav>
 

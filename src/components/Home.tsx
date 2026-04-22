@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { curriculum } from '../content/curriculum';
 import { useProgress } from '../store/progress';
+import { initPyodide } from '../engine/pyodideRunner';
 import { toRoman } from '../utils/roman';
 import type { Difficulty } from '../types';
 
@@ -14,6 +16,14 @@ const diffClass: Record<Difficulty, string> = {
 export function Home() {
   const navigate = useNavigate();
   const progress = useProgress();
+
+  // Warm Pyodide + the Triton simulator in the background while the reader
+  // browses the contents, so the first `Run` click in a tutorial is instant.
+  useEffect(() => {
+    initPyodide().catch(() => {
+      // Silent: the tutorial page will surface any real load error on demand.
+    });
+  }, []);
 
   const totalLessons = curriculum.reduce((s, m) => s + m.lessons.length, 0);
   const totalPuzzles = curriculum.reduce((s, m) => s + m.puzzles.length, 0);
@@ -188,6 +198,31 @@ export function Home() {
               );
             })}
           </ol>
+        </div>
+      </section>
+
+      {/* Forthcoming */}
+      <section className="border-t border-wine-glow/40 px-6 py-14 md:px-10 md:py-16 lg:px-12 lg:py-20">
+        <div className="mx-auto max-w-[1100px]">
+          <div className="grid grid-cols-1 gap-y-4 md:grid-cols-12 md:gap-x-8">
+            <div className="md:col-span-3">
+              <div className="eyebrow mb-2 !text-bordeaux">Forthcoming</div>
+            </div>
+            <div className="md:col-span-9">
+              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+                <h3 className="font-display text-[26px] font-semibold leading-tight text-parchment-ink md:text-[30px]"
+                    style={{ fontVariationSettings: "'opsz' 36, 'SOFT' 80", letterSpacing: '-0.01em' }}>
+                  Fix the Bug
+                </h3>
+                <span className="diff-pill text-bordeaux">Coming Soon</span>
+              </div>
+              <p className="mt-3 max-w-[56ch] font-display text-[15px] leading-relaxed text-parchment/70">
+                A new class of puzzle: you'll be given a kernel that <em>looks</em> correct
+                but produces wrong results. Find the bug, fix it, and explain what went
+                wrong. A different kind of practice than filling in blanks.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 

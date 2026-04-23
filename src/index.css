@@ -230,8 +230,8 @@
     @apply text-parchment;
   }
   .prose-editorial a {
-    @apply text-copper underline decoration-copper/40 decoration-1 underline-offset-4
-           transition-colors hover:text-gold hover:decoration-gold/70;
+    @apply text-gold underline decoration-gold/50 decoration-1 underline-offset-4
+           transition-colors hover:text-parchment-ink hover:decoration-parchment-ink/70;
   }
   .prose-editorial hr {
     @apply my-10 border-none h-px;

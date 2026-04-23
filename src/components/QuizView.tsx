@@ -100,7 +100,7 @@ export function QuizView() {
                 <div key={q.id} className="relative">
                   {/* Question mark in left margin */}
                   <div className="absolute -left-16 top-0 hidden md:block">
-                    <span className="font-display text-[28px] font-medium text-copper/70"
+                    <span className="font-display text-[28px] font-medium text-copper-deep"
                           style={{ fontVariationSettings: "'opsz' 36, 'SOFT' 40" }}>
                       {toRoman(qi + 1)}.
                     </span>

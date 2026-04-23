@@ -112,7 +112,7 @@ export function PuzzleView() {
                   <div className="mt-4 space-y-3 border-l border-copper/40 pl-5">
                     {puzzle.hints.slice(0, hintLevel + 1).map((hint, i) => (
                       <div key={i}>
-                        <div className="eyebrow mb-1 !text-copper/80">
+                        <div className="eyebrow mb-1 !text-copper">
                           Hint {toRoman(i + 1)}
                         </div>
                         <p className="text-[15px] italic leading-relaxed text-parchment/85">
@@ -123,7 +123,7 @@ export function PuzzleView() {
                     {hintLevel < puzzle.hints.length - 1 && (
                       <button
                         onClick={() => setHintLevel((h) => h + 1)}
-                        className="btn-ghost !text-copper/70"
+                        className="btn-ghost !text-copper-deep"
                       >
                         Another hint →
                       </button>

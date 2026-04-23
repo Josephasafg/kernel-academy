@@ -30,7 +30,7 @@ export function Sidebar() {
           <br />
           <span className="font-ital text-[28px] font-normal text-gold">Academy</span>
         </h1>
-        <p className="mt-3 font-sans text-[10px] uppercase tracking-caps text-copper/80">
+        <p className="mt-3 font-sans text-[10px] uppercase tracking-caps text-copper">
           Triton for the Curious Engineer
         </p>
       </Link>
@@ -58,12 +58,12 @@ export function Sidebar() {
                     navigate(`/module/${mod.id}/lesson/${mod.lessons[0]?.id}`)
                   }
                   className={`group block w-full text-left ${
-                    moduleHasActive ? 'text-parchment' : 'text-parchment/75'
+                    moduleHasActive ? 'text-parchment' : 'text-parchment-dim'
                   }`}
                 >
                   <div className="mb-1 flex items-baseline gap-3">
                     <span className={`font-display text-[11px] font-medium tracking-widest-caps ${
-                      moduleHasActive ? 'text-copper' : 'text-copper/60'
+                      moduleHasActive ? 'text-copper' : 'text-copper-deep'
                     }`}>
                       {toRoman(idx + 1)}
                     </span>
@@ -88,7 +88,7 @@ export function Sidebar() {
                                       transition-colors ${
                                         isActive
                                           ? 'text-gold'
-                                          : 'text-parchment/60 hover:text-parchment'
+                                          : 'text-parchment-dim hover:text-parchment'
                                       }`}
                         >
                           {isDone && <Check size={10} className="shrink-0 text-sage" />}
@@ -110,12 +110,12 @@ export function Sidebar() {
                                       transition-colors ${
                                         isActive
                                           ? 'text-gold'
-                                          : 'text-parchment/55 hover:text-parchment'
+                                          : 'text-parchment-dim hover:text-parchment'
                                       }`}
                         >
                           {isDone && <Check size={10} className="shrink-0 text-sage" />}
                           <span className="truncate">
-                            <span className={`mr-1.5 not-italic ${isActive ? 'text-bordeaux' : 'text-bordeaux/70'}`}>◆</span>
+                            <span className="mr-1.5 not-italic text-bordeaux">◆</span>
                             {puzzle.title.replace(/^Puzzle:\s*/, '')}
                           </span>
                         </button>
@@ -130,7 +130,7 @@ export function Sidebar() {
                                   transition-colors ${
                                     location.pathname === `/module/${mod.id}/quiz`
                                       ? 'text-gold'
-                                      : 'text-parchment-mute hover:text-parchment-dim'
+                                      : 'text-parchment-dim hover:text-parchment'
                                   }`}
                     >
                       {quizScores[mod.id] !== undefined ? (
@@ -152,7 +152,7 @@ export function Sidebar() {
           {/* Forthcoming entry — no link */}
           <li className="opacity-60">
             <div className="mb-1 flex items-baseline gap-3">
-              <span className="font-display text-[11px] font-medium tracking-widest-caps text-bordeaux/70">
+              <span className="font-display text-[11px] font-medium tracking-widest-caps text-bordeaux">
                 ◆
               </span>
               <div className="min-w-0">
@@ -160,7 +160,7 @@ export function Sidebar() {
                      style={{ fontVariationSettings: "'opsz' 18, 'SOFT' 60" }}>
                   Fix the Bug
                 </div>
-                <div className="mt-0.5 font-sans text-[9.5px] uppercase tracking-widest-caps text-bordeaux/70">
+                <div className="mt-0.5 font-sans text-[9.5px] uppercase tracking-widest-caps text-bordeaux">
                   Coming Soon
                 </div>
               </div>

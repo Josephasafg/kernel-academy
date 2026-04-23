@@ -51,7 +51,7 @@ export function CodePlayground({
         'editor.foreground': '#f4e8d7',
         'editor.lineHighlightBackground': '#280611',
         'editor.lineHighlightBorder': '#280611',
-        'editorLineNumber.foreground': '#5c1026',
+        'editorLineNumber.foreground': '#a8703c',
         'editorLineNumber.activeForeground': '#c9a961',
         'editorCursor.foreground': '#c44569',
         'editor.selectionBackground': '#5c1026',
